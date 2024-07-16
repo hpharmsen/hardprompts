@@ -3,3 +3,4 @@ venv/
 __pycache__/
 .envrc
 .idea
+/prompt_cache.pickle

@@ -1,0 +1,83 @@
+[BEOORDELAAR]
+json = false
+answer_contains = 'boven de zuiger'
+system = """Je bent een ervaren leraar autotechniek. Je doel is om mij zo goed en zo efficiënt mogelijk {subject} bij te brengen.
+Ik volg een studie autotechniek op MBO of community college niveau.
+Je bent vriendelijk, behulpzaam. Je schrijft in het Nederlands."""
+prompt = """Ik wil dat je mijn antwoord in een examen beoordeelt.
+Beschouw de volgende vraag en het antwoord van een expert, beiden tussen triple quotes:
+
+Vraag: '''Wat laat het indicateurdiagram zien?'''
+Expert antwoord: '''Het drukverloop boven de zuiger tijdens één arbeidscyclus.'''
+
+Volg de volgende stappen:
+
+1. Beschouw mijn antwoord: '''De druk in de zuiger.'''
+en mijn correctie: '''tijdens een cyclus van de motor'''
+Geef hier geen output over.
+
+2. Voeg mijn antwoord en mijn correctie samen tot één antwoord.
+Waar correctie en antwoord elkaar tegen spreken, kies je voor de correctie.
+Geef hier geen output over.
+
+3. Beoordeel dit samengevoegde antwoord door het te vergelijken met het antwoord van de expert.
+Geef in je beoordeling aan waar ik kennis mis en leg uit hoe ik deze hiaten kan minimaliseren met behulp van voorbeelden uit de echte wereld.
+Geef deze beoordeling als output.
+Maak je tekst leerzaam, motiverend en inspirerend maar gebruik eenvoudige taal.
+Gebruik maximaal 80 woorden.
+Antwoord in het Nederlands."""
+
+
+[VERTALER]
+json = false
+answer_contains = '%naam%'
+system = """Je bent een vertaler. Je vertaalt software die bedoeld is voor de training van automonteurs.
+De vertalingen bestaan soms uit hele zinnen maar soms ook uit losse woorden."""
+prompt = """Vertaal de volgende 3 teksten naar Engels.
+
+1 [[De eerste zin bestaat@@uit twee regels en nog een lege regel aan het eind@@]]
+2 [[We luisterden naar de band maar hoorden geen gesis.]]
+3 [[@@Hallo %naam%. Je hebt %aantal% nieuwe berichten.]]
+
+**Belangrijke instructies voor de vertaling:**
+
+- **Alleen tekst vertalen:** Vertaal enkel de tekst die zich bevindt tussen de dubbele vierkante haakjes `[[` en `]]`.
+- **Behoud van speciale tekens:** Alle spaties, tabs, leestekens, `@@`, `###`, symbolen, en andere speciale tekens moeten exact behouden blijven zoals ze in de oorspronkelijke tekst staan.
+- **Formatteerkenmerken behouden:** Als een tekst eindigt op `@@`, de vertaalde tekst moet ook eindigen op `@@`.
+
+**Vertaalverzoek:**
+
+Geef de vertalingen terug met behoud van de originele structuur, nummering, en formatteerkenmerken."""
+
+
+[APPLES]
+json = true
+answer = {oplossing = 11}
+prompt = """Ik had een aantal appels. Ik verloor er één. Daarna gaf ik de helft van wat ik over had weg.
+Daarna at ik er drie op. Toen had ik er nog twee over. Hoeveel appels had ik aan het begin?
+
+Werk stap voor stap aan dit probleem.
+Geef me de output als json met als key: "oplossing" en als waarde het aantal appels.
+Maar geef alleen json als output terug. Geen andere tekst ervoor of erna."""
+
+
+[BALKON1]
+prompt = """Geef me de oppervlakte van het balkon in vierkante meter. Geef je antwoord in json met als
+key: 'oppervlakte' en als waarde de oppervlakte in vierkante meter afgerond op 2 cijfers achter de komma."""
+image = 'input/balkon1.png'
+json = true
+answer = {oppervlakte = 6.84}
+
+[TERRAS2]
+prompt = """Geef me de oppervlakte van het dakterras in vierkante meter. Geef je antwoord in json met als
+key: 'oppervlakte' en als waarde de oppervlakte in vierkante meter afgerond op 4 cijfers achter de komma."""
+image = 'input/terras2.png'
+json = true
+answer = {oppervlakte = 3.7275}
+
+[TERRAS3]
+prompt = """Geef me de oppervlakte van het dakterras in vierkante meter. Geef je antwoord in json met als
+key: 'oppervlakte' en als waarde de oppervlakte in vierkante meter afgerond op 4 cijfers achter de komma."""
+image = 'input/terras3.png'
+json = true
+answer = {oppervlakte = 3.7275}
