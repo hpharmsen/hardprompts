@@ -47,7 +47,7 @@ def print_results(models, results):
         print()
 
 if __name__ == "__main__":
-    models = ["gpt-3.5-turbo", "gpt-4-turbo", "gpt-4o", "claude-3-5-sonnet-20240620", "claude-3-opus-20240229"]
+    models = ["gpt-3.5-turbo", "gpt-4o-mini" ,"gpt-4-turbo", "gpt-4o", "claude-3-5-sonnet-20240620", "claude-3-opus-20240229"]
 
     with open('prompts.toml', 'rb') as f:
         prompts = tomllib.load(f)
