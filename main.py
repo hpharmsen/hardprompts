@@ -18,7 +18,7 @@ def run_prompt(model_name, test_case: dict):
 
     answer_contains = test_case.get('answer_contains')
     answer = test_case.get('answer')
-    if answer_contains and answer_contains in message:
+    if answer_contains and (answer_contains in message or answer_contains in message.replace('**','')):
         print(GREEN, model_name, 'CORRECT', RESET)
         passed = True
     elif answer and answer == message:
@@ -47,7 +47,8 @@ def print_results(models, results):
         print()
 
 if __name__ == "__main__":
-    models = ["gpt-3.5-turbo", "gpt-4o-mini" ,"gpt-4-turbo", "gpt-4o", "claude-3-5-sonnet-20240620", "claude-3-opus-20240229"]
+    models = ["gpt-3.5-turbo", "gpt-4o-mini" ,"gpt-4-turbo", "gpt-4o", "claude-3-5-sonnet-20240620",
+              "claude-3-opus-20240229", "gemini-1.5-flash", "gemini-1.5-pro"]
 
     with open('prompts.toml', 'rb') as f:
         prompts = tomllib.load(f)
@@ -56,8 +57,6 @@ if __name__ == "__main__":
 
     for test_name in prompts.keys():
         resultline = [test_name]
-        #if test_name != 'BALKON1' and test_name != 'TERRAS2' and test_name != 'TERRAS3':
-        #    continue
         test_case = prompts[test_name]
         for model in models:
             if 'turbo' in model and test_case.get('image'):
