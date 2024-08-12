@@ -81,3 +81,8 @@ key: 'oppervlakte' en als waarde de oppervlakte in vierkante meter afgerond op 4
 image = 'input/terras3.png'
 json = true
 answer = {oppervlakte = 3.7275}
+
+[HAZES]
+prompt = """Geef me de naam van de Amsterdamse volkszanger uit de Pijp wiens kinderen ook zangers zijn."""
+answer_contains = 'André Hazes'
+json = false
