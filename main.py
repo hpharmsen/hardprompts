@@ -1,3 +1,4 @@
+import sys
 import tomllib
 
 from justai import Agent
@@ -7,26 +8,37 @@ GREEN = '\033[32m'
 RESET = '\033[0m'
 
 def run_prompt(model_name, test_case: dict):
-    agent = Agent(model_name)
+    agent = Agent(model_name, temperature=0)
     prompt = test_case['prompt']
     agent.system = test_case.get('system_prompt', '')
     return_json = test_case.get('json', False)
     image_path = test_case.get('image', '')
-    image = open(image_path, 'rb').read() if image_path else None
-    message = agent.chat(prompt, image=image, return_json=return_json, cached=True)
+    images = [open(img, 'rb').read() for img in image_path] if image_path else None
+    message = agent.chat(prompt, images=images, return_json=return_json, cached=False)
     print(message)
 
-    answer_contains = test_case.get('answer_contains')
-    answer = test_case.get('answer')
-    if answer_contains and (answer_contains in message or answer_contains in message.replace('**','')):
-        print(GREEN, model_name, 'CORRECT', RESET)
-        passed = True
-    elif answer and answer == message:
-        print(GREEN, model_name, 'CORRECT', RESET)
-        passed = True
+    if test_case.get('follow_up_prompt'):
+        reviewer = Agent('gpt-4o', temperature=0)
+        follow_up_prompt = test_case['follow_up_prompt'].replace('{antwoord}', message)
+        message = reviewer.chat(follow_up_prompt, return_json=True, cached=False)
+        try:
+            passed = message['aantal_goed']
+        except KeyError:
+            print('ERROR', message)
+            passed = '?'
+        print('Resultaat: ', passed)
     else:
-        print(RED, model_name, 'WRONG', RESET)
-        passed = False
+        answer_contains = test_case.get('answer_contains')
+        answer = test_case.get('answer')
+        if answer_contains and (answer_contains in message or answer_contains in message.replace('**','')):
+            print(GREEN, model_name, 'CORRECT', RESET)
+            passed = True
+        elif answer and answer == message:
+            print(GREEN, model_name, 'CORRECT', RESET)
+            passed = True
+        else:
+            print(RED, model_name, 'WRONG', RESET)
+            passed = False
 
     print(agent.last_token_count(), 'tokens')  # (input_token_count, output_token_count, total_token_count)
     print(f'{agent.last_response_time:.1f} seconds')
@@ -52,6 +64,9 @@ if __name__ == "__main__":
 
     with open('prompts.toml', 'rb') as f:
         prompts = tomllib.load(f)
+    if sys.argv[1:]:
+        specific_prompt = sys.argv[1]
+        prompts = {specific_prompt: prompts[specific_prompt]}
 
     results = []
 
@@ -63,10 +78,13 @@ if __name__ == "__main__":
                 resultline += ['🆓'] # 〰️◻️⬜️⬜️🆓
                 continue
             print(f"\n******** Running prompt {test_name} for {model} *************")
-            if run_prompt(model, test_case):
+            res = run_prompt(model, test_case)
+            if res is True:
                 resultline += ['✅']
-            else:
+            elif res is False:
                 resultline += ['❌']
+            else:
+                resultline += [str(res)]
 
         results.append(resultline)
 

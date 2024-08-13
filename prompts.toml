@@ -86,3 +86,63 @@ answer = {oppervlakte = 3.7275}
 prompt = """Geef me de naam van de Amsterdamse volkszanger uit de Pijp wiens kinderen ook zangers zijn."""
 answer_contains = 'André Hazes'
 json = false
+
+[VERSCHILLEN1]
+prompt = """Kijk goed naar deze twee afbeeldingen en geef me de 12 verschillen.
+Geef niet meteen antwoord maar bekijk elke regio van de afbeelding zorgvuldig. Bekijk per regio welke verschillen je ziet.
+Als je de verschillen hebt gevonden, check ze dan. Zijn de afbeeldingen op dat punt echt verschillend?
+Check tenslote of je nog verschillen hebt gemist. Ik wil ze alle 12 hebben! Dat is heel belangrijk."""
+image = ['input/verschillen1a.png', 'input/verschillen1b.png']
+follow_up_prompt = """Een proefpersoon is gevraagd om de verschillen te vinden tussen twee afbeeldingen.
+De proefpersoon komt met het volgende antwoord:
+
+<antwoord>
+{antwoord}
+</antwoord}
+
+Het juiste antwoord is:
+1. In de tweede afbeelding  mist een plank aan de linkerkant van het hek.
+2. In de tweede afbeelding mist het zadel van het paard.
+3. In tweede afbeelding heeft het paard een witte bles over de neus maar in de eerste afbeelding niet.
+4. In de eerste afbeelding heeft de kat haar achterpoot naar beneden hangen maar in de tweede afbeelding is die omhoog getrokken.
+5. In de eerste afbeelding is de trui van de man meer omhoog getrokken zodat je zijn heup ziet.
+6. In de eerste afbeelding heeft de man een haarlok door zijn pet steken en in de tweede afbeelding mist die.
+7. In de tweede afbeelding komt er een kuikentje uit een van de eieren.
+8. In de eerste afbeelding heeft de koe een bruin haarstukje tussen haar hoorns, in de tweede afbelding mist dat.
+9. In de tweede afbeelding mist de sluitmond van de gieter.
+10. In de tweee afbeelding staat er een extra kuikenje naast de gieter.
+11. In de eerste afbeelding staat het tweede kuikentje van links met zijn snavel naar link. In de tweede afbeelding is deze omgedraaid.
+12. In de tweede afbeelding heeft de koe een witte vlek aan haar zijkant, in de eerste afbeelding niet.
+
+Geef aan welke van deze twaalf antwoorden de proefpersoon goed had gevonden (true) of niet had gevonden (false) en geef me ook het aantal goede antwoorden.
+Geef je antwoord in json in het volgende formaat:
+{'antwoorden': [true, true, false, false, true, true, true true, false, false, false, true],
+ 'aantal_goed': 3}"""
+
+
+[VERSCHILLEN2]
+prompt = """Kijk goed naar deze twee afbeeldingen en geef me de verschillen.
+Geef niet meteen antwoord maar bekijk elke regio van de afbeelding zorgvuldig. Bekijk per regio welke verschillen je ziet.
+Als je de verschillen hebt gevonden, check ze dan. Zijn de afbeeldingen op dat punt echt verschillend?
+Check tenslote of je nog verschillen hebt gemist. Ik wil ze zes hebben! Dat is heel belangrijk."""
+image = ['input/verschillen2a.png', 'input/verschillen2b.png']
+follow_up_prompt = """Een proefpersoon is gevraagd om de 6 verschillen te vinden tussen twee afbeeldingen.
+De proefpersoon komt met het volgende antwoord:
+
+<antwoord>
+{antwoord}
+</antwoord}
+
+Het juiste antwoord is:
+1. In de tweede afbeelding mist de ring om haar wijsvinger.
+2. In de eerste afbeelding is haar riem bruin; in de tweede is deze blauw.
+3. In de tweede afbeelding is de ketting om haar hals verdwenen.
+4. Ook veranderde haar rechtse oog in een magisch paars oog.
+5. Aan haar linkse wimper verdween er een klein stukje.
+6. Het linkse oor is weg in afbeelding 2.
+
+Geef aan welke van deze twaalf antwoorden de proefpersoon goed had gevonden (true) of niet had gevonden (false) en geef me ook het aantal goede antwoorden.
+Geef je antwoord in json in het volgende formaat:
+{'antwoorden': [true, true, false, false, true, true],
+ 'aantal_goed': 3}"""
+
