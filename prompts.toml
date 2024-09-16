@@ -1,3 +1,8 @@
+[STRAWBERRY]
+json = true
+prompt = """how many “r”s are in the word “strawberry. Give the output as json with key: “count” and a number"""
+answer = {count = 3}
+
 [BEOORDELAAR]
 json = false
 answer_contains = 'boven de zuiger'

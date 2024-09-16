@@ -14,7 +14,7 @@ def run_prompt(model_name, test_case: dict):
     return_json = test_case.get('json', False)
     image_path = test_case.get('image', '')
     images = [open(img, 'rb').read() for img in image_path] if image_path else None
-    message = agent.chat(prompt, images=images, return_json=return_json, cached=False)
+    message = agent.chat(prompt, images=images, return_json=return_json, cached=True)
     print(message)
 
     if test_case.get('follow_up_prompt'):
