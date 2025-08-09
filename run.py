@@ -82,7 +82,7 @@ def run_prompt(pass_, model_name, test_case: dict) -> tuple[int | str, int | Non
     if test_case.get('follow_up_prompt'):
         follow_up_prompt = test_case['follow_up_prompt'].replace('{antwoord}', message)
         with Model('gpt-5') as reviewer:
-            message = reviewer.chat(follow_up_prompt, return_json=True, cached=use_cache)
+            message = reviewer.chat(follow_up_prompt, return_json=True, cached=False)
         try:
             passed = message['aantal_goed']
         except KeyError:
