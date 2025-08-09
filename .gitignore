@@ -4,3 +4,4 @@ __pycache__/
 .envrc
 .idea
 /prompt_cache.pickle
+/storage.jsonl

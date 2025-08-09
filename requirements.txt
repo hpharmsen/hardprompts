@@ -2,3 +2,4 @@ pip-tools
 justai
 pillow
 anthropic>=0.62.0
+pyyaml
