@@ -41,7 +41,7 @@ De vertalingen bestaan soms uit hele zinnen maar soms ook uit losse woorden."""
 prompt = """Vertaal de volgende 3 teksten naar Engels.
 
 1 [[De eerste zin bestaat@@uit twee regels en nog een lege regel aan het eind@@]]
-2 [[We luisterden naar de band maar hoorden geen gesis.]]
+2 [[We luisterden naar de band maar hoorden er geen lucht uit lopen.]]
 3 [[@@Hallo %naam%. Je hebt %aantal% nieuwe berichten.]]
 
 **Belangrijke instructies voor de vertaling:**
@@ -54,6 +54,36 @@ prompt = """Vertaal de volgende 3 teksten naar Engels.
 
 Geef de vertalingen terug met behoud van de originele structuur, nummering, en formatteerkenmerken."""
 
+[MULTI_VERTALER]
+json = true
+system = """You are a professional translator specialized in translating technical training PowerPointdocuments.
+
+## Target audience
+The texts requiring translation are technical training materials specifically designed for sweepers.
+
+These training documents delve into a variety of intricate topics, including hydraulic systems and
+electrical systems, which are essential for the operation and control of the sweepers.
+
+The training is meticulously structured to cater to mechanics at different levels of expertise,
+from beginners who are just starting their careers to seasoned professionals who have extensive experience in the field.
+
+Each section of the training is tailored to enhance the understanding and skills of the mechanics,
+providing them with the necessary knowledge to perform maintenance, troubleshoot issues,
+and optimize the performance of the sweepers.
+
+The goal of these trainings is to equip the mechanics with a thorough understanding of the technical aspects of sweepers,
+enabling them to handle various challenges and improve the overall efficiency and reliability of the machines."""
+prompt = """Translate this JSON list with 70 texts into Dutch.
+
+[[0, "How to make the RAVO R5e safe to work on."], [1, "How to apply the Factory Standard guidelines."], [2, "When you should use personal protection equipment."], [3, "How to disable the high voltage system safely in accordance "], [4, "     with the "], [5, "13-step"], [6, " procedure."], [7, "Goals for this training"], [8, "Autosized"], [9, "The most important is "], [10, "that"], [11, "participants"], [12, " feel "], [13, "confident"], [14, "that"], [15, "they"], [16, "can"], [17, "safely"], [18, " handel "], [19, "the"], [20, "electric"], [21, " machine "], [22, "and"], [23, "the"], [24, "safety"], [25, " procedure. "], [26, "Goals for this training"], [27, "According to the Factory Standard there are 3 kinds of technical levels:"], [28, "Level 1    Non-EV trained technician (Layman)"], [29, "Level 3   EV-Workshop Supervisor (main responsible person) ("], [30, "ev"], [31, "-WS) "], [32, "  At least EV-PP skilled"], [33, "Level 2   EV-Professional Person ("], [34, "ev"], [35, "-PP)"], [36, "The designation documents:"], [37, "There must be a "], [38, "written agreement "], [39, "between employer and employee."], [40, "The person designating must be satisfied that:"], [41, "The person being designated "], [42, "meets the conditions"], [43, "The person designated must be satisfied that:"], [44, "He/she "], [45, "meets the conditions"], [46, " and that he/she has the "], [47, "necessary powers and resources"], [48, "."], [49, "The document must at least contain:"], [50, "The person\u2019s name, effective and expiring date, qualification and vehicle type."], [51, "Factory standard"], [52, "You must be authorized to work on electric vehicles in accordance with the local standards."], [53, "The definition of the levels may differ depending on the standard of each country."], [54, "There"], [55, " is no "], [56, "diffrence"], [57, "between"], [58, "Lvel"], [59, " 2 "], [60, "and"], [61, " 3 "], [62, "only"], [63, "that"], [64, " level 3 has "], [65, "the"], [66, "responsibilities"], [67, ". "], [68, "Factory standard"], [69, "HV-system "]]
+
+If there are spaces or punctuation marks in the text, keep them intact in the translated text.
+Translate all 70 texts.
+
+If possible, try not to make the translations longer than the original texts.
+Your output should be JSON again, with the key 'translations' and the value being the list in the same structure as the input.
+Note! The output JSON must also contain exactly 70 elements."""
+answer_contains = "verantwoordelijkheden"
 
 [APPLES]
 json = true
@@ -96,7 +126,7 @@ json = false
 prompt = """Kijk goed naar deze twee afbeeldingen en geef me de 12 verschillen.
 Geef niet meteen antwoord maar bekijk elke regio van de afbeelding zorgvuldig. Bekijk per regio welke verschillen je ziet.
 Als je de verschillen hebt gevonden, check ze dan. Zijn de afbeeldingen op dat punt echt verschillend?
-Check tenslote of je nog verschillen hebt gemist. Ik wil ze alle 12 hebben! Dat is heel belangrijk."""
+Check tenslotte of je nog verschillen hebt gemist. Ik wil ze alle 12 hebben! Dat is heel belangrijk."""
 image = ['input/verschillen1a.png', 'input/verschillen1b.png']
 follow_up_prompt = """Een proefpersoon is gevraagd om de verschillen te vinden tussen twee afbeeldingen.
 De proefpersoon komt met het volgende antwoord:
@@ -151,3 +181,17 @@ Geef je antwoord in json in het volgende formaat:
 {'antwoorden': [true, true, false, false, true, true],
  'aantal_goed': 3}"""
 
+[LOGIQUIZ]
+prompt = """Amanda, Jack, Mike en Rachel reisden in vier verschillende jaren (2015, 2016, 2017 en 2018) naar vier verschillende locaties (Londen, Rio de Janeiro, Sydney, Tokio).
+	1.	Noch Amanda noch Jack reisden in 2015.
+	2.	Mike reisde niet naar Zuid-Amerika.
+	3.	Mike reisde in 2017.
+	4.	Amanda bezocht Londen.
+	5.	Noch Mike noch Rachel reisden naar Japan.
+	6.	Een man reisde in 2016.
+Welke stad werd als eerste bezocht en door wie??
+Geef je antwoord als json met als keys:
+"bestemming": de stad die als eerste bezocht werd
+"persoon": de naam van de persoon die die stad bezocht."""
+json = true
+answer = {bestemming = "Rio de Janeiro", persoon = "Rachel"}
