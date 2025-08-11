@@ -1,5 +1,6 @@
 from collections import defaultdict
 
+from storage import Storage
 
 RED = '\033[31m'
 GREEN = '\033[32m'
@@ -7,7 +8,9 @@ MAGENTA = '\033[35m'
 RESET = '\033[0m'
 
 
-def print_results(models, results, passes: int):
+def print_results(models, test_cases):
+    storage = Storage()
+    test_names = list(test_cases.keys())
     correct = defaultdict(int)
     W = 13
     print(' ' * (W + 1), end='')
@@ -15,15 +18,15 @@ def print_results(models, results, passes: int):
         print(model[:W].ljust(W), end='   ')
     print()
 
-    for line in results:
-        print(f'{line[0]:<14}', end='')
-        for index, result in enumerate(line[1:]):
-            res, duration = result
+    for test_name in test_names:
+        print(f'{test_name:<14}', end='')
+        for index, model_name in enumerate(models):
+            res, duration, passes = storage.read(model_name, test_name)
             entry1 = f"{res[:5]:<5}"
 
-            if res == str(passes) or res == '√':
+            if res == '√':
                 entry1 = f"{GREEN}{entry1}{RESET}"
-            elif res == '0' or res == 'X':
+            elif res == 'X':
                 entry1 = f"{RED}{entry1}{RESET}"
 
             if duration > 0:

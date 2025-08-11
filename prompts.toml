@@ -85,6 +85,12 @@ Your output should be JSON again, with the key 'translations' and the value bein
 Note! The output JSON must also contain exactly 70 elements."""
 answer_contains = "verantwoordelijkheden"
 
+[BIRMEES]
+json = false
+answer_contains = "မီး"
+prompt = """Vertaal de volgende tekst naar het Birmees: Een zuigmotor vereist regelmatig onderhoud om optimale prestaties en een lange levensduur te garanderen. Het begint met het controleren en vervangen van smeerolie, omdat olie niet alleen wrijving vermindert maar ook vuildeeltjes afvoert en de interne componenten koelt. Het olie- en oliefilter dienen doorgaans om de 10.000 tot 15.000 kilometer vervangen te worden, afhankelijk van gebruiksomstandigheden en fabrikantenspecificaties. Daarnaast is het controleren en reinigen of vervangen van het luchtfilter belangrijk; een verstopt filter vermindert de luchttoevoer, wat leidt tot onvolledige verbranding en vermogensverlies. Ook de bougies moeten op tijd worden nagezien, omdat versleten bougies een onregelmatige ontsteking en verhoogd brandstofverbruik veroorzaken.
+Verder is het van belang de koelvloeistof op peil te houden en periodiek te verversen, aangezien oververhitting ernstige motorschade kan veroorzaken. De aandrijfriemen en kettingen moeten regelmatig op slijtage of spanning worden gecontroleerd, omdat deze een cruciale rol spelen in de timing en aandrijving van hulpaggregaten. Brandstoffilters dienen schoon te zijn om verstoppingen en schade aan de injectoren te voorkomen. Tot slot kan preventief onderhoud, zoals het meten van de compressiedruk en het inspecteren van de cilinderwanden op slijtage, helpen om beginnende problemen vroegtijdig te signaleren. Zo blijft een zuigmotor betrouwbaar, efficiënt en veilig in gebruik."""
+
 [APPLES]
 json = true
 answer = {oplossing = 11}
@@ -126,7 +132,9 @@ json = false
 prompt = """Kijk goed naar deze twee afbeeldingen en geef me de 12 verschillen.
 Geef niet meteen antwoord maar bekijk elke regio van de afbeelding zorgvuldig. Bekijk per regio welke verschillen je ziet.
 Als je de verschillen hebt gevonden, check ze dan. Zijn de afbeeldingen op dat punt echt verschillend?
-Check tenslotte of je nog verschillen hebt gemist. Ik wil ze alle 12 hebben! Dat is heel belangrijk."""
+Check tenslotte of je nog verschillen hebt gemist. Ik wil ze alle 12 hebben! Dat is heel belangrijk.
+Stel geen vragen.
+"""
 image = ['input/verschillen1a.png', 'input/verschillen1b.png']
 follow_up_prompt = """Een proefpersoon is gevraagd om de verschillen te vinden tussen twee afbeeldingen.
 De proefpersoon komt met het volgende antwoord:
@@ -159,7 +167,8 @@ Geef je antwoord in json in het volgende formaat:
 prompt = """Kijk goed naar deze twee afbeeldingen en geef me de verschillen.
 Geef niet meteen antwoord maar bekijk elke regio van de afbeelding zorgvuldig. Bekijk per regio welke verschillen je ziet.
 Als je de verschillen hebt gevonden, check ze dan. Zijn de afbeeldingen op dat punt echt verschillend?
-Check tenslote of je nog verschillen hebt gemist. Ik wil ze zes hebben! Dat is heel belangrijk."""
+Check tenslote of je nog verschillen hebt gemist. Ik wil ze zes hebben! Dat is heel belangrijk.
+Stel geen vragen."""
 image = ['input/verschillen2a.png', 'input/verschillen2b.png']
 follow_up_prompt = """Een proefpersoon is gevraagd om de 6 verschillen te vinden tussen twee afbeeldingen.
 De proefpersoon komt met het volgende antwoord:

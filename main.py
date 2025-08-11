@@ -2,7 +2,7 @@ import sys
 import tomllib
 import yaml
 
-from run import run_all
+from run import run_jobs, get_jobs
 from output import print_results
 
 
@@ -14,7 +14,7 @@ def process_arguments() -> tuple[list[str], dict[str, dict[str, str]], int, bool
         ALL_MODELS = yaml.safe_load(f)["models"]
 
     models = []
-    prompts = {}
+    test_cases = {}
     include_visual_prompts = False
     use_cache = True
     passes = 1
@@ -28,7 +28,7 @@ def process_arguments() -> tuple[list[str], dict[str, dict[str, str]], int, bool
         elif arg in ALL_MODELS:
             models.append(arg)
         elif arg in ALL_PROMPTS:
-            prompts[arg] = ALL_PROMPTS[arg]
+            test_cases[arg] = ALL_PROMPTS[arg]
         else:
             print("Unknown argument:", arg)
             sys.exit(1)
@@ -36,16 +36,17 @@ def process_arguments() -> tuple[list[str], dict[str, dict[str, str]], int, bool
     if not models:
         models = ALL_MODELS
 
-    if not prompts:
+    if not test_cases:
         if include_visual_prompts:
-            prompts = ALL_PROMPTS
+            test_cases = ALL_PROMPTS
         else:
-            prompts = {k: v for k, v in ALL_PROMPTS.items() if not v.get("image")}
+            test_cases = {k: v for k, v in ALL_PROMPTS.items() if not v.get("image")}
 
-    return models, prompts, passes, use_cache
+    return models, test_cases, passes, use_cache
 
 
 if __name__ == "__main__":
-    models, prompts, passes, use_cache = process_arguments()
-    results = run_all(models, prompts, passes, use_cache)
-    print_results(models, results, passes)
+    models, test_cases, passes, use_cache = process_arguments()
+    jobs = get_jobs(models, test_cases, passes, use_cache)
+    run_jobs(jobs)
+    print_results(models, test_cases)

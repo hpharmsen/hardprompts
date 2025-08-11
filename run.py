@@ -5,59 +5,46 @@ from output import MAGENTA, RESET, GREEN, RED
 from storage import Storage
 
 
-def run_all(models, prompts, passes, use_cache) -> list[list[str]]:
+def get_jobs(models, test_cases, passes, use_cache) -> list[dict]:
     storage = Storage()
     results = []
-    total_to_run = len(prompts) * len(models) * passes
-    current_run = 0
-    for test_name in list(prompts.keys()):
-        resultline = [test_name]
-        test_case = prompts[test_name]
-
+    for test_name in list(test_cases.keys()):
+        test_case = test_cases[test_name]
+        test_case['name'] = test_name
         for model in models:
-            if use_cache:
-                res, duration = storage.read(model, test_name, passes)
-                if res is not None:
-                    resultline += [[res, duration]]
-                    current_run += passes
-                    continue
-
-            if '4.1' in model and test_case.get('image'):
-                resultline += [['⬜', None]] # 〰️◻️⬜️⬜️🆓
+            if "4.1" in model and test_case.get("image"):
                 continue
 
-            current_run += passes
-            print(
-                f"\n******** Running prompt {test_name} for {model} run {current_run}/{total_to_run} "
-                + "*" * (32 - len(model) - len(test_name))
-            )
-            show, duration = run_testcase_on_model(test_case, model, test_name, passes, storage)
-            resultline += [[show, duration]]
-        results.append(resultline)
+            if use_cache:
+                _, _, model_passes = storage.read(model, test_name)
+            else:
+                model_passes = 0
+
+            if model_passes >= passes:
+                continue
+
+            for _pass in range(model_passes, passes):
+                job = {'test_case': test_case, 'model': model, 'pass': _pass + 1}
+                results += [job]
     return results
 
 
-def run_testcase_on_model(test_case: dict, model: str, test_name: str, passes: int, storage: Storage) -> tuple[str, float | None]:
-    tot = 0
-    duration = 0.0
-    show = None
-    for p in range(passes):
-        res, dur = run_prompt(p + 1, model, test_case)
-        try:
-            tot += int(res)
-            duration += dur / passes
-        except ValueError:
-            show = res
-            duration = 0.0
-            break
-    if show is None:
-        show = str(tot)
-    duration = round(duration, 1)
-    storage.save(model, test_name, passes, show, duration)
-    return show, duration
+def run_jobs(jobs):
+    storage = Storage()
+    current_run = 0
+    for job in jobs:
+        current_run += 1
+        test_case, model_name, _pass = job['test_case'], job['model'], job['pass']
+        test_name = test_case["name"]
+        print(
+            f"\n******** Running prompt {test_name} for {model_name} run {current_run}/{len(jobs)} "
+            + "*" * (32 - len(model_name) - len(test_name))
+        )
+        show, duration = run_prompt(_pass, model_name, test_case)
+        storage.add(model_name, test_name, show, duration)
 
 
-def run_prompt(pass_, model_name, test_case: dict) -> tuple[int | str, int | None]:
+def run_prompt(pass_, model_name, test_case: dict) -> tuple[str, float | None]:
     prompt = str(pass_) + '. ' + test_case['prompt']
     return_json = test_case.get('json', False)
     image_path = test_case.get('image', [])
@@ -72,7 +59,7 @@ def run_prompt(pass_, model_name, test_case: dict) -> tuple[int | str, int | Non
     except NotImplementedError:
         print(MAGENTA, model_name, 'NOT IMPLEMENTED', RESET)
         return 'N', None
-    except (BadRequestException, GeneralException) as e:
+    except (BadRequestException, GeneralException):
         print(MAGENTA, model_name, 'BAD REQUEST', RESET)
         return 'B', None
     except RatelimitException:
@@ -84,7 +71,7 @@ def run_prompt(pass_, model_name, test_case: dict) -> tuple[int | str, int | Non
         with Model('gpt-5') as reviewer:
             message = reviewer.chat(follow_up_prompt, return_json=True, cached=False)
         try:
-            passed = message['aantal_goed']
+            passed = str(message['aantal_goed'])
         except KeyError:
             print('ERROR', message)
             passed = '?'
@@ -94,16 +81,16 @@ def run_prompt(pass_, model_name, test_case: dict) -> tuple[int | str, int | Non
         answer = test_case.get('answer')
         if return_json and not isinstance(message, dict):
             print(MAGENTA, model_name, "NO JSON", RESET)
-            passed = 0
-        elif answer_contains and (answer_contains in message or answer_contains in str(message).replace('**','')):
+            passed = 'X'
+        elif answer_contains and (answer_contains in message or answer_contains in str(message).replace('**', '')):
             print(GREEN, model_name, 'CORRECT', RESET)
-            passed = 1
+            passed = '√'
         elif answer and answer == message:
             print(GREEN, model_name, 'CORRECT', RESET)
-            passed = 1
+            passed = '√'
         else:
             print(RED, model_name, 'WRONG', RESET)
-            passed = 0
+            passed = 'X'
 
     print(agent.last_token_count(), 'tokens')  # (input_token_count, output_token_count, total_token_count)
     print(f'{agent.last_response_time:.1f} seconds')
