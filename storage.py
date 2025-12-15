@@ -8,7 +8,7 @@ class Storage:
     Class to store and retrieve results from a JSONL file.
     """
 
-    def __init__(self, filename: str = "storage.jsonl"):
+    def __init__(self, filename: str = "data/results.jsonl"):
         """
         Initializes the Storage object.
 
@@ -51,7 +51,7 @@ class Storage:
         new_record = {"model": model,
                       "test_name": test_name,
                       "result": result,
-                      "duration": round(duration, 3)}
+                      "duration": round(duration, 3) if duration else None}
         data.append(new_record)
         self._write_all(data)
 
@@ -84,11 +84,34 @@ class Storage:
         return result, duration, len(data)
 
     def reset(self):
-        """
-        Clears all data from the storage file.
-        """
+        """Clears all data from the storage file."""
         if os.path.exists(self.filename):
             os.remove(self.filename)
-        # Recreate the empty file
         with open(self.filename, 'w', encoding='utf-8'):
             pass
+
+    def get_last_n(self, model: str, test_names: List[str], n: int) -> Tuple[int, float | None, int]:
+        """Returns correct count, avg duration, and total results for last n results per test."""
+        data = self.filter([model], test_names)
+        # Group by test_name and take last n per test
+        by_test = {}
+        for record in data:
+            test = record['test_name']
+            by_test.setdefault(test, []).append(record)
+
+        correct = 0
+        durations = []
+        total = 0
+        for test_name in test_names:
+            records = by_test.get(test_name, [])[-n:]
+            total += len(records)
+            for r in records:
+                if r['result'] == '√':
+                    correct += 1
+                elif r['result'] and r['result'].isdigit():
+                    correct += int(r['result'])
+                if r['duration']:
+                    durations.append(r['duration'])
+
+        avg_duration = sum(durations) / len(durations) if durations else None
+        return correct, avg_duration, total

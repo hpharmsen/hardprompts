@@ -1,5 +1,5 @@
 pip-tools
-justai
+-e /Users/hp/proj/justai
 pillow
-anthropic>=0.62.0
+anthropic
 pyyaml

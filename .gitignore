@@ -4,4 +4,6 @@ __pycache__/
 .envrc
 .idea
 /prompt_cache.pickle
-/storage.jsonl
+/data/results.jsonl
+/jobs.log
+/storage_bak.jsonl

@@ -91,6 +91,11 @@ answer_contains = "မီး"
 prompt = """Vertaal de volgende tekst naar het Birmees: Een zuigmotor vereist regelmatig onderhoud om optimale prestaties en een lange levensduur te garanderen. Het begint met het controleren en vervangen van smeerolie, omdat olie niet alleen wrijving vermindert maar ook vuildeeltjes afvoert en de interne componenten koelt. Het olie- en oliefilter dienen doorgaans om de 10.000 tot 15.000 kilometer vervangen te worden, afhankelijk van gebruiksomstandigheden en fabrikantenspecificaties. Daarnaast is het controleren en reinigen of vervangen van het luchtfilter belangrijk; een verstopt filter vermindert de luchttoevoer, wat leidt tot onvolledige verbranding en vermogensverlies. Ook de bougies moeten op tijd worden nagezien, omdat versleten bougies een onregelmatige ontsteking en verhoogd brandstofverbruik veroorzaken.
 Verder is het van belang de koelvloeistof op peil te houden en periodiek te verversen, aangezien oververhitting ernstige motorschade kan veroorzaken. De aandrijfriemen en kettingen moeten regelmatig op slijtage of spanning worden gecontroleerd, omdat deze een cruciale rol spelen in de timing en aandrijving van hulpaggregaten. Brandstoffilters dienen schoon te zijn om verstoppingen en schade aan de injectoren te voorkomen. Tot slot kan preventief onderhoud, zoals het meten van de compressiedruk en het inspecteren van de cilinderwanden op slijtage, helpen om beginnende problemen vroegtijdig te signaleren. Zo blijft een zuigmotor betrouwbaar, efficiënt en veilig in gebruik."""
 
+[HAZES]
+prompt = """Geef me de naam van de Amsterdamse volkszanger uit de Pijp wiens kinderen ook zangers zijn."""
+answer_contains = 'André Hazes'
+json = false
+
 [APPLES]
 json = true
 answer = {oplossing = 11}
@@ -101,6 +106,20 @@ Werk stap voor stap aan dit probleem.
 Geef me de output als json met als key: "oplossing" en als waarde het aantal appels.
 Maar geef alleen json als output terug. Geen andere tekst ervoor of erna."""
 
+[LOGIQUIZ]
+prompt = """Amanda, Jack, Mike en Rachel reisden in vier verschillende jaren (2015, 2016, 2017 en 2018) naar vier verschillende locaties (Londen, Rio de Janeiro, Sydney, Tokio).
+	1.	Noch Amanda noch Jack reisden in 2015.
+	2.	Mike reisde niet naar Zuid-Amerika.
+	3.	Mike reisde in 2017.
+	4.	Amanda bezocht Londen.
+	5.	Noch Mike noch Rachel reisden naar Japan.
+	6.	Een man reisde in 2016.
+Welke stad werd als eerste bezocht en door wie??
+Geef je antwoord als json met als keys:
+"bestemming": de stad die als eerste bezocht werd
+"persoon": de naam van de persoon die die stad bezocht."""
+json = true
+answer = {bestemming = "Rio de Janeiro", persoon = "Rachel"}
 
 [BALKON1]
 prompt = """Geef me de oppervlakte van het balkon in vierkante meter. Geef je antwoord in json met als
@@ -122,11 +141,6 @@ key: 'oppervlakte' en als waarde de oppervlakte in vierkante meter afgerond op 4
 image = 'input/terras3.png'
 json = true
 answer = {oppervlakte = 3.7275}
-
-[HAZES]
-prompt = """Geef me de naam van de Amsterdamse volkszanger uit de Pijp wiens kinderen ook zangers zijn."""
-answer_contains = 'André Hazes'
-json = false
 
 [VERSCHILLEN1]
 prompt = """Kijk goed naar deze twee afbeeldingen en geef me de 12 verschillen.
@@ -154,8 +168,8 @@ Het juiste antwoord is:
 8. In de eerste afbeelding heeft de koe een bruin haarstukje tussen haar hoorns, in de tweede afbelding mist dat.
 9. In de tweede afbeelding mist de sluitmond van de gieter.
 10. In de tweee afbeelding staat er een extra kuikenje naast de gieter.
-11. In de eerste afbeelding staat het tweede kuikentje van links met zijn snavel naar link. In de tweede afbeelding is deze omgedraaid.
-12. In de tweede afbeelding heeft de koe een witte vlek aan haar zijkant, in de eerste afbeelding niet.
+11. In de eerste afbeelding staat het tweede kuikentje van links met zijn snavel naar links. In de tweede afbeelding is deze omgedraaid.
+12. In de tweede afbeelding heeft de koe een witte vlek aan haar zijkant, in de eerste afbeelding niet. Ofwel: in de eerste afbeelding loopt de zwarte vlek verder door.
 
 Geef aan welke van deze twaalf antwoorden de proefpersoon goed had gevonden (true) of niet had gevonden (false) en geef me ook het aantal goede antwoorden.
 Geef je antwoord in json in het volgende formaat:
@@ -185,22 +199,7 @@ Het juiste antwoord is:
 5. Aan haar linkse wimper verdween er een klein stukje.
 6. Het linkse oor is weg in afbeelding 2.
 
-Geef aan welke van deze twaalf antwoorden de proefpersoon goed had gevonden (true) of niet had gevonden (false) en geef me ook het aantal goede antwoorden.
+Geef aan welke van deze zes antwoorden de proefpersoon goed had gevonden (true) of niet had gevonden (false) en geef me ook het aantal goede antwoorden.
 Geef je antwoord in json in het volgende formaat:
 {'antwoorden': [true, true, false, false, true, true],
  'aantal_goed': 3}"""
-
-[LOGIQUIZ]
-prompt = """Amanda, Jack, Mike en Rachel reisden in vier verschillende jaren (2015, 2016, 2017 en 2018) naar vier verschillende locaties (Londen, Rio de Janeiro, Sydney, Tokio).
-	1.	Noch Amanda noch Jack reisden in 2015.
-	2.	Mike reisde niet naar Zuid-Amerika.
-	3.	Mike reisde in 2017.
-	4.	Amanda bezocht Londen.
-	5.	Noch Mike noch Rachel reisden naar Japan.
-	6.	Een man reisde in 2016.
-Welke stad werd als eerste bezocht en door wie??
-Geef je antwoord als json met als keys:
-"bestemming": de stad die als eerste bezocht werd
-"persoon": de naam van de persoon die die stad bezocht."""
-json = true
-answer = {bestemming = "Rio de Janeiro", persoon = "Rachel"}
