@@ -12,7 +12,7 @@ from output import MAGENTA, RESET, GREEN, RED, YELLOW
 from storage import Storage
 
 MAX_CONCURRENT_JOBS = 12
-REVIEW_MODEL = 'gpt-5.2'
+REVIEW_MODEL = 'claude-opus-4-5'
 
 # Track models to skip due to rate limits or credit issues
 skipped_models: Dict[str, str] = {}  # model_name -> reason
@@ -173,12 +173,25 @@ def run_prompt(pass_, model_name, test_case: Dict) -> Tuple[str, float | None, s
             except Exception as e:
                 error_type = type(e).__name__
                 error_msg = str(e)
+                error_msg_lower = error_msg.lower()
                 log_msg = f"{model_name} {error_type} in run_prompt (attempt {try_ + 1}): {error_msg}"
                 logging.error(log_msg)
 
-                if any(x in error_msg.lower() for x in ['import', 'attribute', 'circular import', 'cannot import']):
+                if any(x in error_msg_lower for x in ['import', 'attribute', 'circular import', 'cannot import']):
                     print(MAGENTA, f"{model_name} MODEL INITIALIZATION ERROR: {error_msg[:100]}", RESET)
                     return 'I', None, None
+
+                # Retryable server errors (504, 503, 500, overloaded, etc.)
+                retryable_errors = ['deadline', '504', '503', '500', 'overloaded', 'server error',
+                                    'service unavailable', 'internal error', 'temporarily unavailable']
+                if any(x in error_msg_lower for x in retryable_errors):
+                    logging.warning(f"{model_name} SERVER ERROR (attempt {try_ + 1}): {error_msg[:100]}")
+                    print(YELLOW, f"{model_name} SERVER ERROR (attempt {try_ + 1}), retrying...", RESET)
+                    if try_ == 4:
+                        print(MAGENTA, f"{model_name} SERVER ERROR after retries: {error_msg[:100]}", RESET)
+                        return 'E', None, None
+                    time.sleep(5 + try_ * 5)  # Increasing backoff
+                    continue
 
                 # For other errors, let them be handled by the outer try-except
                 if try_ == 4:  # If this was the last try

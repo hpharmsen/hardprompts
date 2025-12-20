@@ -1,9 +1,11 @@
 import sys
 import tomllib
+import webbrowser
 import yaml
+from pathlib import Path
 
 from run import run_jobs, get_jobs
-from output import print_results, print_report, YELLOW, RESET
+from output import print_results, print_report, generate_standalone_html, YELLOW, RESET
 
 
 def process_arguments() -> tuple[list[str], dict[str, dict[str, str]], int, bool, bool, bool]:
@@ -65,3 +67,8 @@ if __name__ == '__main__':
         print(f'\n{YELLOW}Skipped models:{RESET}')
         for model, reason in skipped.items():
             print(f'  {YELLOW}{model}{RESET}: {reason}')
+
+    # Generate standalone HTML and open in browser
+    generate_standalone_html()
+    html_path = Path(__file__).parent / 'visualize.html'
+    webbrowser.open(f'file://{html_path}')

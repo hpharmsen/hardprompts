@@ -1,4 +1,7 @@
+import json
+import re
 from collections import defaultdict
+from pathlib import Path
 
 from storage import Storage
 
@@ -14,14 +17,18 @@ def print_results(models, test_cases):
     test_names = list(test_cases.keys())
     correct = defaultdict(int)
     W = 13
-    print(' ' * (W + 1), end='')
-    for model in models:
-        print(model[:W].ljust(W), end='   ')
+    MODEL_W = 30
+
+    # Header row with test names
+    print(' ' * MODEL_W, end='')
+    for test_name in test_names:
+        print(test_name[:W].ljust(W), end='   ')
     print()
 
-    for test_name in test_names:
-        print(f'{test_name:<14}', end='')
-        for index, model_name in enumerate(models):
+    # Data rows with models
+    for model_name in models:
+        print(f'{model_name:<{MODEL_W}}', end='')
+        for test_name in test_names:
             res, duration, passes = storage.read(model_name, test_name)
             entry1 = f"{res[:5]:<5}" if res else '?    '
 
@@ -37,14 +44,11 @@ def print_results(models, test_cases):
 
             print(entry + '      ', end='')
             if res == '√':
-                correct[models[index]] += passes
+                correct[model_name] += passes
             elif is_int(res):
-                correct[models[index]] += int(res)
-        print()
-    print(" " * (W - 2), end="")
-    for model in models:
-        print("   ", end="")
-        print(str(correct[model]).ljust(W), end='')
+                correct[model_name] += int(res)
+        # Print model total at end of row
+        print(f'  {correct[model_name]}')
 
 
 def is_int(s):
@@ -68,3 +72,44 @@ def print_report(models, test_cases, passes):
         correct, avg_duration, _ = storage.get_last_n(model, test_names, passes)
         duration_str = f'{avg_duration:.2f}s' if avg_duration else 'N/A'
         print(f'{model:<30} {correct:>5}/{max_correct:<4} {duration_str:>14}')
+
+
+def generate_standalone_html(output_path: str = 'visualize.html'):
+    """Generates a standalone HTML file with embedded data that works with file:// protocol."""
+    base_path = Path(__file__).parent
+
+    # Read source HTML template (use template file to avoid circular reads)
+    html_template = (base_path / 'visualize_template.html').read_text()
+
+    # Read data files
+    prompts_text = (base_path / 'data' / 'prompts.toml').read_text()
+    models_yaml_text = (base_path / 'data' / 'models.yaml').read_text()
+    results_text = (base_path / 'data' / 'results.jsonl').read_text()
+    models_text = (base_path / 'data' / 'models.jsonl').read_text()
+
+    # Escape for JavaScript string literals
+    def js_escape(s):
+        return json.dumps(s)
+
+    # Build replacement string
+    embedded_data_js = (
+        'const EMBEDDED_DATA = {\n'
+        f'            prompts: {js_escape(prompts_text)},\n'
+        f'            models_yaml: {js_escape(models_yaml_text)},\n'
+        f'            results: {js_escape(results_text)},\n'
+        f'            models: {js_escape(models_text)}\n'
+        '        };'
+    )
+
+    # Find and replace the empty EMBEDDED_DATA block using string methods
+    pattern = r'const EMBEDDED_DATA = \{[^}]+\};'
+    match = re.search(pattern, html_template)
+    if match:
+        html_output = html_template[:match.start()] + embedded_data_js + html_template[match.end():]
+    else:
+        raise ValueError('EMBEDDED_DATA block not found in template')
+
+    # Write output
+    output_file = base_path / output_path
+    output_file.write_text(html_output)
+    print(f'Generated standalone HTML: {output_file}')
