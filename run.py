@@ -165,7 +165,7 @@ def run_prompt(pass_, model_name, test_case: Dict) -> Tuple[str, float | None, s
     for try_ in range(5):
         try:
             try:
-                with Model(model_name, temperature=0) as agent:
+                with Model(model_name) as agent:
                     agent.system = test_case.get("system_prompt", "")
                     message = agent.prompt(prompt, images=images, return_json=return_json, cached=False)
                 print(message)
@@ -224,20 +224,39 @@ def run_prompt(pass_, model_name, test_case: Dict) -> Tuple[str, float | None, s
             if any(x in error_msg for x in ['insufficient_quota', 'quota_exceeded', 'billing', 'payment', 'credit']):
                 print(YELLOW, f"{model_name} SKIPPING (quota exhausted): {str(e)[:100]}", RESET)
                 return None, None, 'Quota exhausted'
-            # Temporary rate limit - retry
-            logging.warning(f"{model_name} RATE LIMIT (attempt {try_ + 1}): {str(e)}")
+            # Temporary rate limit - exponential backoff
+            wait = 2 ** try_ * 5  # 5, 10, 20, 40, 80 seconds
+            logging.warning(f"{model_name} RATE LIMIT (attempt {try_ + 1}), retrying in {wait}s")
+            print(YELLOW, f"{model_name} RATE LIMIT (attempt {try_ + 1}), retrying in {wait}s...", RESET)
             if try_ == 4:
-                print(YELLOW, f"{model_name} SKIPPING (rate limit after retries): {str(e)[:100]}", RESET)
-                return None, None, 'Rate limited (after retries)'
-            time.sleep(5 + try_ * 5)  # Increasing backoff
+                print(MAGENTA, f"{model_name} RATE LIMITED after 5 attempts: {str(e)[:100]}", RESET)
+                return 'R', None, None
+            time.sleep(wait)
+            continue
 
     if test_case.get('follow_up_prompt'):
         follow_up_prompt = test_case['follow_up_prompt'].replace('{antwoord}', message)
-        with Model(REVIEW_MODEL) as reviewer:
-            message = reviewer.prompt(follow_up_prompt, return_json=True, cached=False)
+        message = None
+        for review_try in range(5):
+            try:
+                with Model(REVIEW_MODEL) as reviewer:
+                    message = reviewer.prompt(follow_up_prompt, return_json=True, cached=False)
+                break
+            except RatelimitException as e:
+                wait = 2 ** review_try * 5
+                logging.warning(f'REVIEWER RATE LIMIT (attempt {review_try + 1}) for {model_name}, retrying in {wait}s: {str(e)[:100]}')
+                print(YELLOW, f'REVIEWER RATE LIMIT (attempt {review_try + 1}), retrying in {wait}s...', RESET)
+                if review_try == 4:
+                    print(MAGENTA, f'REVIEWER RATE LIMITED after 5 attempts', RESET)
+                    return 'R', None, None
+                time.sleep(wait)
+            except Exception as e:
+                logging.error(f'REVIEWER ERROR for {model_name}: {type(e).__name__}: {str(e)[:200]}')
+                print(MAGENTA, f'REVIEWER ERROR: {str(e)[:100]}', RESET)
+                return 'E', None, None
         try:
             passed = str(message['aantal_goed'])
-        except KeyError:
+        except (KeyError, TypeError):
             print('ERROR', message)
             passed = '?'
         print('Resultaat: ', passed)

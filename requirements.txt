@@ -1,5 +1,0 @@
-pip-tools
--e /Users/hp/proj/justai
-pillow
-anthropic
-pyyaml

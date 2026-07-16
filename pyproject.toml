@@ -1,0 +1,16 @@
+[project]
+name = "hardprompts"
+version = "0.1.0"
+description = "LLM benchmarking tool that runs test prompts against multiple AI models and compares their results"
+requires-python = ">=3.11"
+dependencies = [
+    "justai",
+    "pyyaml",
+    "httpx",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.sources]
+justai = { path = "/Users/hp/proj/justai", editable = true }
