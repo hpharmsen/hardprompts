@@ -421,7 +421,7 @@
                 <div class="model-card-header">
                     <button class="back-btn" onclick="showTab('table')">&larr; Terug</button>
                     <div>
-                        <div class="model-card-title">${modelInfo.name || modelKey}</div>
+                        <div class="model-card-title">${modelKey}</div>
                         <div class="model-card-lab">${modelInfo.lab || 'Unknown'}</div>
                     </div>
                 </div>
@@ -595,7 +595,8 @@
                         if (r === '√') score++;
                         else if (/^\d+$/.test(r)) score += parseInt(r);
                     });
-                    agg.displayResult = String(score);
+                    const avg = score / agg.results.length;
+                    agg.displayResult = avg % 1 === 0 ? String(avg) : avg.toFixed(1);
                 }
 
                 agg.count = agg.results.length;
@@ -640,8 +641,8 @@
             models.forEach(model => {
                 html += '<tr>';
                 const modelInfo = modelsData[model];
-                const displayName = modelInfo ? modelInfo.name : model;
-                html += `<td class="model-cell"><a href="#" onclick="showModelCard('${model}'); return false;" title="${model}">${displayName}</a></td>`;
+                const titleName = modelInfo ? modelInfo.name : model;
+                html += `<td class="model-cell"><a href="#" onclick="showModelCard('${model}'); return false;" title="${titleName}">${model}</a></td>`;
 
                 const { score, maxScore } = modelScores[model];
                 const pct = maxScore > 0 ? Math.round(100 * score / maxScore) : 0;
@@ -667,12 +668,9 @@
                         displayText = '&#10003;';
                     } else if (agg.displayResult === 'X') {
                         resultClass = 'result-fail';
-                    } else if (/^\d+$/.test(agg.displayResult)) {
-                        const num = parseInt(agg.displayResult);
-                        if (num === agg.count) {
-                            resultClass = 'result-pass';
-                            displayText = '&#10003;';
-                        } else if (num > 0) {
+                    } else if (/^\d+(\.\d+)?$/.test(agg.displayResult)) {
+                        const num = parseFloat(agg.displayResult);
+                        if (num > 0) {
                             resultClass = 'result-partial';
                         } else {
                             resultClass = 'result-fail';
@@ -729,7 +727,7 @@
 
                 return {
                     model,
-                    name: modelInfo.name || model,
+                    name: model,
                     lab: modelInfo.lab || 'default',
                     score,
                     maxScore,

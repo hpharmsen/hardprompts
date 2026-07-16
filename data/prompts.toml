@@ -203,3 +203,10 @@ Geef aan welke van deze zes antwoorden de proefpersoon goed had gevonden (true) 
 Geef je antwoord in json in het volgende formaat:
 {'antwoorden': [true, true, false, false, true, true],
  'aantal_goed': 3}"""
+
+[WORDLE]
+prompt = """Welk Engels woord moet dit zijn?
+Geef je antwoord in hoofdletters in json dict met key 'word'."""
+image = 'input/wordle.webp'
+json = true
+answer = {word = 'BUTTE'}
