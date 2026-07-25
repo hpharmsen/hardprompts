@@ -9,12 +9,7 @@ class Storage:
     """
 
     def __init__(self, filename: str = "data/results.jsonl"):
-        """
-        Initializes the Storage object.
-
-        Args:
-            filename (str): The name of the file to store the data in.
-        """
+        """Creates the storage file if it does not exist yet."""
         self.filename = filename
         if not os.path.exists(self.filename):
             with open(self.filename, 'w', encoding='utf-8'):
@@ -22,8 +17,6 @@ class Storage:
 
     def _read_all(self) -> List[Dict]:
         """Reads all records from the storage file."""
-        if not os.path.exists(self.filename) or os.path.getsize(self.filename) == 0:
-            return []
         with open(self.filename, 'r', encoding='utf-8') as f:
             return [json.loads(line) for line in f]
 
@@ -38,15 +31,7 @@ class Storage:
         return [record for record in data if record['model'] in models and record['test_name'] in test_names]
 
     def add(self, model: str, test_name: str, result: str, duration: float):
-        """
-        Saves a result to the storage file.
-
-        Args:
-            model (str): The model name.
-            test_name (str): The testcase identifier.
-            result (str): The result of the testcase.
-            duration (float): The duration of the testcase execution.
-        """
+        """Saves one result to the storage file."""
         data = self._read_all()
         new_record = {"model": model,
                       "test_name": test_name,
@@ -56,42 +41,21 @@ class Storage:
         self._write_all(data)
 
     def read(self, model: str, test_name: str) -> Tuple[Optional[str], Optional[float], int]:
-        """
-        Reads a result from the storage file.
-
-        Args:
-            model (str): The model name.
-            test_name (str): The testcase identifier.
-
-        Returns:
-            Tuple[Optional[str], Optional[float]]: The result and duration, or (None, None) if not found.
-        """
-        def average(lst: list) -> float:
-            return sum(lst) / len(lst)
-
+        """Returns result, avg duration and number of stored passes for one model/test."""
         data = self.filter([model], [test_name])
-        # Check if the 'result' field is '√' for each record using all()
         if not data:
             result = None
         elif all(record['result'] == data[0]['result'] for record in data):
-            # If all records have the same 'result' field, return it
             result = data[0]['result']
         else:
-            # else return the number of '√'
+            # Mixed results: report how many passes were correct
             result = str(len([record for record in data if record['result'] == '√']))
         durations = [record['duration'] for record in data if record['duration']]
-        duration = average(durations) if durations else None
+        duration = sum(durations) / len(durations) if durations else None
         return result, duration, len(data)
 
-    def reset(self):
-        """Clears all data from the storage file."""
-        if os.path.exists(self.filename):
-            os.remove(self.filename)
-        with open(self.filename, 'w', encoding='utf-8'):
-            pass
-
-    def get_last_n(self, model: str, test_names: List[str], n: int) -> Tuple[int, float | None, int]:
-        """Returns correct count, avg duration, and total results for last n results per test."""
+    def get_last_n(self, model: str, test_names: List[str], n: int) -> Tuple[int, float | None]:
+        """Returns correct count and avg duration over the last n results per test."""
         data = self.filter([model], test_names)
         # Group by test_name and take last n per test
         by_test = {}
@@ -101,10 +65,8 @@ class Storage:
 
         correct = 0
         durations = []
-        total = 0
         for test_name in test_names:
             records = by_test.get(test_name, [])[-n:]
-            total += len(records)
             for r in records:
                 if r['result'] == '√':
                     correct += 1
@@ -114,4 +76,4 @@ class Storage:
                     durations.append(r['duration'])
 
         avg_duration = sum(durations) / len(durations) if durations else None
-        return correct, avg_duration, total
+        return correct, avg_duration

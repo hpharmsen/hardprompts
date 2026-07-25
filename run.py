@@ -2,8 +2,9 @@ import asyncio
 import logging
 import signal
 import time
-from random import random, shuffle
-from typing import List, Dict, Tuple, Set
+from pathlib import Path
+from random import shuffle
+from typing import List, Dict, Tuple
 
 from justai import Model
 from justai.models.basemodel import BadRequestException, GeneralException, RatelimitException
@@ -28,13 +29,9 @@ logging.basicConfig(
 def get_jobs(models, test_cases, passes, use_cache) -> List[Dict]:
     storage = Storage()
     results = []
-    for test_name in list(test_cases.keys()):
-        test_case = test_cases[test_name]
+    for test_name, test_case in test_cases.items():
         test_case['name'] = test_name
         for model in models:
-            # if "4.1" in model and test_case.get("image"):
-            #     continue
-
             if use_cache:
                 _, _, model_passes = storage.read(model, test_name)
             else:
@@ -44,15 +41,14 @@ def get_jobs(models, test_cases, passes, use_cache) -> List[Dict]:
                 continue
 
             for _pass in range(model_passes, passes):
-                job = {'test_case': test_case, 'model': model, 'pass': _pass + 1}
-                results += [job]
+                results.append({'test_case': test_case, 'model': model, 'pass': _pass + 1})
     return results
 
 
 def run_jobs(jobs, concurrent=False) -> Dict[str, str]:
     """Run jobs and return dict of skipped models with reasons."""
     global skipped_models
-    skipped_models = {}  # Reset at start of run
+    skipped_models = {}
     storage = Storage()
     if concurrent:
         asyncio.run(run_jobs_concurrently(jobs, storage))
@@ -98,6 +94,8 @@ def run_jobs_sequentially(jobs, storage):
         logging.info(f'Finished job {current_run}/{len(jobs)}: {test_name} for {model_name}')
 
 
+# Deliberately our own, not justai's identically named TimeoutException: this one is raised
+# by the SIGALRM handler below. Adding justai's to the imports above would silently break it.
 class TimeoutException(Exception): pass
 
 def timeout_handler(signum, frame):
@@ -105,7 +103,7 @@ def timeout_handler(signum, frame):
 
 
 async def run_jobs_concurrently(jobs, storage):
-    semaphore = asyncio.Semaphore(MAX_CONCURRENT_JOBS)  # Limit to 3 concurrent jobs
+    semaphore = asyncio.Semaphore(MAX_CONCURRENT_JOBS)
     
     async def run_job_with_semaphore(job, job_id, total_jobs):
         async with semaphore:
@@ -161,12 +159,13 @@ def run_prompt(pass_, model_name, test_case: Dict) -> Tuple[str, float | None, s
     image_path = test_case.get('image', [])
     if isinstance(image_path, str):
         image_path = [image_path]
-    images = [open(img, 'rb').read() for img in image_path] if image_path else None
+    images = [Path(img).read_bytes() for img in image_path] if image_path else None
     for try_ in range(5):
         try:
             try:
                 with Model(model_name) as agent:
                     agent.system = test_case.get("system_prompt", "")
+                    # cached=False: a cache hit would replay an earlier answer and void the benchmark
                     message = agent.prompt(prompt, images=images, return_json=return_json, cached=False)
                 print(message)
                 break
@@ -197,6 +196,8 @@ def run_prompt(pass_, model_name, test_case: Dict) -> Tuple[str, float | None, s
                 if try_ == 4:  # If this was the last try
                     print(MAGENTA, f"{model_name} ERROR: {error_msg[:100]}", RESET)
                     return 'E', None, None
+                # This generic handler does the logging and the string-based classification;
+                # re-raise so the typed handlers below can map the justai exception to a code.
                 raise e
         except NotImplementedError as e:
             error_msg = f"{model_name} NOT IMPLEMENTED: {str(e)}"
@@ -247,7 +248,7 @@ def run_prompt(pass_, model_name, test_case: Dict) -> Tuple[str, float | None, s
                 logging.warning(f'REVIEWER RATE LIMIT (attempt {review_try + 1}) for {model_name}, retrying in {wait}s: {str(e)[:100]}')
                 print(YELLOW, f'REVIEWER RATE LIMIT (attempt {review_try + 1}), retrying in {wait}s...', RESET)
                 if review_try == 4:
-                    print(MAGENTA, f'REVIEWER RATE LIMITED after 5 attempts', RESET)
+                    print(MAGENTA, 'REVIEWER RATE LIMITED after 5 attempts', RESET)
                     return 'R', None, None
                 time.sleep(wait)
             except Exception as e:
@@ -266,10 +267,8 @@ def run_prompt(pass_, model_name, test_case: Dict) -> Tuple[str, float | None, s
         if return_json and not isinstance(message, Dict):
             print(MAGENTA, model_name, "NO JSON", RESET)
             passed = 'X'
-        elif answer_contains and (answer_contains in message or answer_contains in str(message).replace('**', '')):
-            print(GREEN, model_name, 'CORRECT', RESET)
-            passed = '√'
-        elif answer and answer == message:
+        elif (answer_contains and (answer_contains in message or answer_contains in str(message).replace('**', ''))
+              or answer and answer == message):
             print(GREEN, model_name, 'CORRECT', RESET)
             passed = '√'
         else:

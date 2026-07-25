@@ -69,7 +69,7 @@ def print_report(models, test_cases, passes):
     print('-' * 56)
 
     for model in models:
-        correct, avg_duration, _ = storage.get_last_n(model, test_names, passes)
+        correct, avg_duration = storage.get_last_n(model, test_names, passes)
         duration_str = f'{avg_duration:.2f}s' if avg_duration else 'N/A'
         print(f'{model:<30} {correct:>5}/{max_correct:<4} {duration_str:>14}')
 
@@ -87,17 +87,13 @@ def generate_standalone_html(output_path: str = 'visualize.html'):
     results_text = (base_path / 'data' / 'results.jsonl').read_text()
     models_text = (base_path / 'data' / 'models.jsonl').read_text()
 
-    # Escape for JavaScript string literals
-    def js_escape(s):
-        return json.dumps(s)
-
-    # Build replacement string
+    # json.dumps doubles as the escaper for JavaScript string literals
     embedded_data_js = (
         'const EMBEDDED_DATA = {\n'
-        f'            prompts: {js_escape(prompts_text)},\n'
-        f'            models_yaml: {js_escape(models_yaml_text)},\n'
-        f'            results: {js_escape(results_text)},\n'
-        f'            models: {js_escape(models_text)}\n'
+        f'            prompts: {json.dumps(prompts_text)},\n'
+        f'            models_yaml: {json.dumps(models_yaml_text)},\n'
+        f'            results: {json.dumps(results_text)},\n'
+        f'            models: {json.dumps(models_text)}\n'
         '        };'
     )
 
