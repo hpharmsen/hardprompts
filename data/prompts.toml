@@ -143,6 +143,7 @@ json = true
 answer = {oppervlakte = 3.7275}
 
 [VERSCHILLEN1]
+max_score = 12
 prompt = """Kijk goed naar deze twee afbeeldingen en geef me de 12 verschillen.
 Geef niet meteen antwoord maar bekijk elke regio van de afbeelding zorgvuldig. Bekijk per regio welke verschillen je ziet.
 Als je de verschillen hebt gevonden, check ze dan. Zijn de afbeeldingen op dat punt echt verschillend?
@@ -178,6 +179,7 @@ Geef je antwoord in json in het volgende formaat:
 
 
 [VERSCHILLEN2]
+max_score = 6
 prompt = """Kijk goed naar deze twee afbeeldingen en geef me de verschillen.
 Geef niet meteen antwoord maar bekijk elke regio van de afbeelding zorgvuldig. Bekijk per regio welke verschillen je ziet.
 Als je de verschillen hebt gevonden, check ze dan. Zijn de afbeeldingen op dat punt echt verschillend?

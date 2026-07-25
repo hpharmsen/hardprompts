@@ -301,7 +301,7 @@
             <span><strong class="result-pass">&#10003;</strong> = Correct</span>
             <span><strong class="result-fail">X</strong> = Fout</span>
             <span><strong class="result-partial">3</strong> = Deels correct</span>
-            <span><strong class="result-error">T/R/B/E/I/N</strong> = Timeout/Rate limit/Bad request/Error/Import/Not implemented</span>
+            <span><strong class="result-error">T/R/B/E/G/I/N</strong> = Timeout/Rate limit/Bad request/Error/General error/Import/Not implemented</span>
         </div>
         <div class="table-container">
             <div class="loading" id="table-loading">Data laden...</div>
@@ -338,6 +338,7 @@
 
         const VISION_TESTS = ['BALKON1', 'TERRAS2', 'TERRAS3', 'VERSCHILLEN1', 'VERSCHILLEN2'];
         let testOrder = [];
+        let testMaxScores = {};
         let modelOrder = [];
 
         // Embedded data (will be filled by output.py for standalone use)
@@ -391,10 +392,11 @@
                 const key = `${modelKey}|${test}`;
                 const agg = aggregatedData[key];
                 if (agg) {
-                    maxScore += agg.count;
+                    const testMax = testMaxScores[test] || 1;
+                    maxScore += agg.count * testMax;
                     let testScore = 0;
                     agg.results.forEach(r => {
-                        if (r === '√') { score++; testScore++; }
+                        if (r === '√') { score += testMax; testScore += testMax; }
                         else if (/^\d+$/.test(r)) { score += parseInt(r); testScore += parseInt(r); }
                     });
                     if (agg.avgDuration !== null) {
@@ -546,6 +548,17 @@
                 // Extract section names [NAME] in order
                 testOrder = [...promptsText.matchAll(/^\[([A-Z0-9_]+)\]/gm)].map(m => m[1]);
 
+                // Extract max_score per test section (defaults to 1)
+                testMaxScores = {};
+                const sectionMatches = [...promptsText.matchAll(/^\[([A-Z0-9_]+)\]/gm)];
+                for (let i = 0; i < sectionMatches.length; i++) {
+                    const start = sectionMatches[i].index + sectionMatches[i][0].length;
+                    const end = i + 1 < sectionMatches.length ? sectionMatches[i + 1].index : promptsText.length;
+                    const body = promptsText.slice(start, end);
+                    const maxMatch = body.match(/^max_score\s*=\s*(\d+)/m);
+                    if (maxMatch) testMaxScores[sectionMatches[i][1]] = parseInt(maxMatch[1]);
+                }
+
                 // Extract model names (lines starting with "  - " that are not comments)
                 modelOrder = [...modelsYamlText.matchAll(/^\s+-\s+([^#\n]+)/gm)]
                     .map(m => m[1].trim())
@@ -620,9 +633,10 @@
                     const key = `${model}|${test}`;
                     const agg = aggregatedData[key];
                     if (agg) {
-                        maxScore += agg.count;
+                        const testMax = testMaxScores[test] || 1;
+                        maxScore += agg.count * testMax;
                         agg.results.forEach(r => {
-                            if (r === '√') score++;
+                            if (r === '√') score += testMax;
                             else if (/^\d+$/.test(r)) score += parseInt(r);
                         });
                     }
@@ -709,9 +723,10 @@
                     const key = `${model}|${test}`;
                     const agg = aggregatedData[key];
                     if (agg) {
-                        maxScore += agg.count;
+                        const testMax = testMaxScores[test] || 1;
+                        maxScore += agg.count * testMax;
                         agg.results.forEach(r => {
-                            if (r === '√') score++;
+                            if (r === '√') score += testMax;
                             else if (/^\d+$/.test(r)) score += parseInt(r);
                         });
                         if (agg.avgDuration !== null) {

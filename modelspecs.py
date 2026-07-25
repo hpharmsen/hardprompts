@@ -19,6 +19,8 @@ LAB_PREFIXES = {
     'deepseek': ('Deepseek', 'deepseek'),
     'sonar': ('Perplexity', 'perplexity'),
     'grok': ('xAI', 'x-ai'),
+    'kimi': ('Moonshot', 'moonshotai'),
+    'moonshot': ('Moonshot', 'moonshotai'),
 }
 
 

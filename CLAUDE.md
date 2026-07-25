@@ -56,7 +56,8 @@ follow_up_prompt = "..."    # Post-process with reviewer model
 - `T` - Timeout
 - `R` - Rate limited
 - `B` - Bad request
-- `E` - General error
+- `E` - Error (unhandled exception after retries)
+- `G` - General error (justai `GeneralException`, non-quota)
 - `N` - Not implemented
 - `I` - Import/initialization error
 
