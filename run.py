@@ -57,25 +57,42 @@ def run_jobs(jobs, concurrent=False) -> Dict[str, str]:
     return skipped_models
 
 
+def start_job(job, job_id, total_jobs) -> Tuple[Dict, str, int, str] | None:
+    """Announce a job and unpack it, or return None if its model is being skipped."""
+    test_case, model_name, _pass = job['test_case'], job['model'], job['pass']
+    test_name = test_case['name']
+    progress = f'{job_id}/{total_jobs}'
+
+    if model_name in skipped_models:
+        logging.info(f'Skipping job {progress}: {test_name} for {model_name} (previously skipped)')
+        return None
+
+    logging.info(f'Starting job {progress}: {test_name} for {model_name}')
+    print(
+        f"\n******** Running prompt {test_name} for {model_name} run {progress} "
+        + "*" * (32 - len(model_name) - len(test_name))
+    )
+    return test_case, model_name, _pass, test_name
+
+
+def report_timeout(test_name, model_name, job_id, total_jobs):
+    logging.warning(f'Job {job_id}/{total_jobs}: {test_name} for {model_name} timed out.')
+    print(f"Job {test_name} for {model_name} timed out.")
+
+
+def finish_job(storage, model_name, test_name, show, duration, job_id, total_jobs):
+    storage.add(model_name, test_name, show, duration)
+    logging.info(f'Finished job {job_id}/{total_jobs}: {test_name} for {model_name}')
+
+
 def run_jobs_sequentially(jobs, storage):
-    current_run = 0
     signal.signal(signal.SIGALRM, timeout_handler)
 
-    for job in jobs:
-        current_run += 1
-        test_case, model_name, _pass = job['test_case'], job['model'], job['pass']
-        test_name = test_case["name"]
-
-        # Skip if model already marked as skipped
-        if model_name in skipped_models:
-            logging.info(f'Skipping job {current_run}/{len(jobs)}: {test_name} for {model_name} (previously skipped)')
+    for current_run, job in enumerate(jobs, start=1):
+        started = start_job(job, current_run, len(jobs))
+        if not started:
             continue
-
-        logging.info(f'Starting job {current_run}/{len(jobs)}: {test_name} for {model_name}')
-        print(
-            f"\n******** Running prompt {test_name} for {model_name} run {current_run}/{len(jobs)} "
-            + "*" * (32 - len(model_name) - len(test_name))
-        )
+        test_case, model_name, _pass, test_name = started
 
         signal.alarm(300)  # 5 minutes
         try:
@@ -85,13 +102,11 @@ def run_jobs_sequentially(jobs, storage):
                 continue  # Don't store result for skipped runs
         except TimeoutException:
             show, duration = 'T', None
-            logging.warning(f'Job {current_run}/{len(jobs)}: {test_name} for {model_name} timed out.')
-            print(f"Job {test_name} for {model_name} timed out.")
+            report_timeout(test_name, model_name, current_run, len(jobs))
         finally:
             signal.alarm(0)
 
-        storage.add(model_name, test_name, show, duration)
-        logging.info(f'Finished job {current_run}/{len(jobs)}: {test_name} for {model_name}')
+        finish_job(storage, model_name, test_name, show, duration, current_run, len(jobs))
 
 
 # Deliberately our own, not justai's identically named TimeoutException: this one is raised
@@ -118,19 +133,10 @@ async def run_jobs_concurrently(jobs, storage):
 
 
 async def run_job_async(job, storage, job_id, total_jobs):
-    test_case, model_name, _pass = job['test_case'], job['model'], job['pass']
-    test_name = test_case["name"]
-
-    # Skip if model already marked as skipped
-    if model_name in skipped_models:
-        logging.info(f'Skipping job {job_id}/{total_jobs}: {test_name} for {model_name} (previously skipped)')
+    started = start_job(job, job_id, total_jobs)
+    if not started:
         return
-
-    logging.info(f'Starting job {job_id}/{total_jobs}: {test_name} for {model_name}')
-    print(
-        f"\n******** Running prompt {test_name} for {model_name} run {job_id}/{total_jobs} "
-        + "*" * (32 - len(model_name) - len(test_name))
-    )
+    test_case, model_name, _pass, test_name = started
 
     try:
         show, duration, skip_reason = await asyncio.wait_for(
@@ -142,11 +148,21 @@ async def run_job_async(job, storage, job_id, total_jobs):
             return  # Don't store result for skipped runs
     except asyncio.TimeoutError:
         show, duration = 'T', None
-        logging.warning(f'Job {job_id}/{total_jobs}: {test_name} for {model_name} timed out.')
-        print(f"Job {test_name} for {model_name} timed out.")
+        report_timeout(test_name, model_name, job_id, total_jobs)
 
-    storage.add(model_name, test_name, show, duration)
-    logging.info(f'Finished job {job_id}/{total_jobs}: {test_name} for {model_name}')
+    finish_job(storage, model_name, test_name, show, duration, job_id, total_jobs)
+
+
+def backoff_or_give_up(label: str, try_: int, error: Exception) -> bool:
+    """Sleeps with exponential backoff and returns True, or False on the 5th and last attempt."""
+    if try_ == 4:
+        print(MAGENTA, f'{label} after 5 attempts: {str(error)[:100]}', RESET)
+        return False
+    wait = 2 ** try_ * 5  # 5, 10, 20, 40 seconds
+    logging.warning(f'{label} (attempt {try_ + 1}), retrying in {wait}s')
+    print(YELLOW, f'{label} (attempt {try_ + 1}), retrying in {wait}s...', RESET)
+    time.sleep(wait)
+    return True
 
 
 def run_prompt(pass_, model_name, test_case: Dict) -> Tuple[str, float | None, str | None]:
@@ -225,15 +241,15 @@ def run_prompt(pass_, model_name, test_case: Dict) -> Tuple[str, float | None, s
             if any(x in error_msg for x in ['insufficient_quota', 'quota_exceeded', 'billing', 'payment', 'credit']):
                 print(YELLOW, f"{model_name} SKIPPING (quota exhausted): {str(e)[:100]}", RESET)
                 return None, None, 'Quota exhausted'
-            # Temporary rate limit - exponential backoff
-            wait = 2 ** try_ * 5  # 5, 10, 20, 40, 80 seconds
-            logging.warning(f"{model_name} RATE LIMIT (attempt {try_ + 1}), retrying in {wait}s")
-            print(YELLOW, f"{model_name} RATE LIMIT (attempt {try_ + 1}), retrying in {wait}s...", RESET)
-            if try_ == 4:
-                print(MAGENTA, f"{model_name} RATE LIMITED after 5 attempts: {str(e)[:100]}", RESET)
+            if not backoff_or_give_up(f'{model_name} RATE LIMIT', try_, e):
                 return 'R', None, None
-            time.sleep(wait)
             continue
+        except Exception as e:
+            # Safety net: justai also raises Connection/Authorization/ModelOverload/Timeout/
+            # RefusalException. Without this, those escape run_prompt and abort the whole run.
+            logging.error(f'{model_name} UNHANDLED {type(e).__name__}: {str(e)[:200]}')
+            print(MAGENTA, f"{model_name} UNHANDLED {type(e).__name__}: {str(e)[:100]}", RESET)
+            return 'E', None, None
 
     if test_case.get('follow_up_prompt'):
         follow_up_prompt = test_case['follow_up_prompt'].replace('{antwoord}', message)
@@ -244,13 +260,9 @@ def run_prompt(pass_, model_name, test_case: Dict) -> Tuple[str, float | None, s
                     message = reviewer.prompt(follow_up_prompt, return_json=True, cached=False)
                 break
             except RatelimitException as e:
-                wait = 2 ** review_try * 5
-                logging.warning(f'REVIEWER RATE LIMIT (attempt {review_try + 1}) for {model_name}, retrying in {wait}s: {str(e)[:100]}')
-                print(YELLOW, f'REVIEWER RATE LIMIT (attempt {review_try + 1}), retrying in {wait}s...', RESET)
-                if review_try == 4:
-                    print(MAGENTA, 'REVIEWER RATE LIMITED after 5 attempts', RESET)
+                # No quota-skip here: a reviewer limit says nothing about the model under test.
+                if not backoff_or_give_up(f'REVIEWER RATE LIMIT for {model_name}', review_try, e):
                     return 'R', None, None
-                time.sleep(wait)
             except Exception as e:
                 logging.error(f'REVIEWER ERROR for {model_name}: {type(e).__name__}: {str(e)[:200]}')
                 print(MAGENTA, f'REVIEWER ERROR: {str(e)[:100]}', RESET)

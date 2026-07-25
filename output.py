@@ -12,10 +12,16 @@ MAGENTA = '\033[35m'
 RESET = '\033[0m'
 
 
+def max_score(test_cases) -> int:
+    """Attainable score for one pass; multi-answer prompts declare max_score in prompts.toml."""
+    return sum(test_case.get('max_score', 1) for test_case in test_cases.values())
+
+
 def print_results(models, test_cases):
     storage = Storage()
     test_names = list(test_cases.keys())
     correct = defaultdict(int)
+    attainable = defaultdict(int)
     W = 13
     MODEL_W = 30
 
@@ -43,12 +49,15 @@ def print_results(models, test_cases):
                 entry = entry1 + '  N/A'
 
             print(entry + '      ', end='')
+            # Each stored pass is worth max_score points, so the attainable total depends on
+            # how many passes this model actually ran for this test.
+            attainable[model_name] += test_cases[test_name].get('max_score', 1) * passes
             if res == '√':
                 correct[model_name] += passes
             elif is_int(res):
                 correct[model_name] += int(res)
         # Print model total at end of row
-        print(f'  {correct[model_name]}')
+        print(f'  {correct[model_name]}/{attainable[model_name]}')
 
 
 def is_int(s):
@@ -63,7 +72,7 @@ def print_report(models, test_cases, passes):
     """Prints a summary report table with model, correct count, and avg duration."""
     storage = Storage()
     test_names = list(test_cases.keys())
-    max_correct = passes * len(test_names)
+    max_correct = passes * max_score(test_cases)
 
     print(f'\n{"Model":<30} {"Correct":>10} {"Avg Duration":>14}')
     print('-' * 56)

@@ -16,29 +16,28 @@ class Storage:
                 pass
 
     def _read_all(self) -> List[Dict]:
-        """Reads all records from the storage file."""
+        """Reads all records, skipping a truncated last line from an interrupted run."""
         with open(self.filename, 'r', encoding='utf-8') as f:
-            return [json.loads(line) for line in f]
-
-    def _write_all(self, data: List[Dict]):
-        """Writes all records to the storage file."""
-        with open(self.filename, 'w', encoding='utf-8') as f:
-            for item in data:
-                f.write(json.dumps(item, ensure_ascii=False) + '\n')
+            records = []
+            for line in f:
+                try:
+                    records.append(json.loads(line))
+                except json.JSONDecodeError:
+                    continue
+            return records
 
     def filter(self, models: List[str], test_names: List[str]) -> List[Dict]:
         data = self._read_all()
         return [record for record in data if record['model'] in models and record['test_name'] in test_names]
 
     def add(self, model: str, test_name: str, result: str, duration: float):
-        """Saves one result to the storage file."""
-        data = self._read_all()
-        new_record = {"model": model,
-                      "test_name": test_name,
-                      "result": result,
-                      "duration": round(duration, 3) if duration else None}
-        data.append(new_record)
-        self._write_all(data)
+        """Appends one result to the storage file."""
+        record = {"model": model,
+                  "test_name": test_name,
+                  "result": result,
+                  "duration": round(duration, 3) if duration else None}
+        with open(self.filename, 'a', encoding='utf-8') as f:
+            f.write(json.dumps(record, ensure_ascii=False) + '\n')
 
     def read(self, model: str, test_name: str) -> Tuple[Optional[str], Optional[float], int]:
         """Returns result, avg duration and number of stored passes for one model/test."""

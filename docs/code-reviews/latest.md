@@ -8,8 +8,10 @@ terug op ruff + import-smoke + entrypoint-smoke. Gedragswijzigingen zijn daardoo
 automatisch te verifiëren; dat is meegewogen in de labels.
 
 ## Samenvatting
-- Totaal findings: 18 (SAFE: 13, LIKELY: 5, RISKY: 0)
-- Geschatte regels te schrappen: ~46 (SAFE) + ~57 (LIKELY, waarvan 2 findings juist regels toevoegen)
+- Totaal findings: 19 (SAFE: 13, LIKELY: 6, RISKY: 0) — 5.4 kwam er tijdens de fix-pass bij
+- Toegepast: 18 (alle 13 SAFE + alle 5 LIKELY uit de interactieve ronde), 1 open (5.4)
+- Netto regels: -43 (SAFE) en +20 (LIKELY, waar 5.2 en 5.3 bewust code toevoegen)
+- Twee gedragsdefecten gevonden en gefixt (5.2, 5.3), één gevonden en open (5.4)
 
 ## Bijvangst
 
@@ -140,6 +142,8 @@ formaatbeslissing, geen reductie.
   taxonomie die jij net hebt uitgebreid met `G`, en die codes staan in CLAUDE.md én worden
   door `visualize.html` gelezen. Richting A is netter maar zet gedrag vast dat ik niet kan
   testen (geen testsuite, en de excepties treden alleen op bij echte API-fouten).
+- **Gekozen: richting B.** Geverifieerd tegen de vorige commit: pre-fix ontsnapte een
+  `ConnectionException` daadwerkelijk uit `run_prompt`, post-fix geeft die `'E'` terug.
 
 ### Finding 5.3 [LIKELY] — `print_report` negeert `max_score`, output.py:66
 - Regels bespaard: **-3** (fix, niet meegeteld)
@@ -259,6 +263,32 @@ formaatbeslissing, geen reductie.
   `if os.path.exists: os.remove` binnen `reset` zinloos: die vervalt met 4.1 en is niet
   apart geteld.
 
+## Nieuw gevonden tijdens de fix-pass
+
+### Finding 5.4 [LIKELY] — `Storage.read` geeft altijd `'0'` voor multi-answer prompts, storage.py:44-52
+- **Nog niet gefixt**, gevonden bij het verifiëren van 5.3.
+- Bij VERSCHILLEN1/2 slaat `run_prompt` de reviewer-score op als cijferstring
+  (`passed = str(message['aantal_goed'])`, dus `'7'`, `'4'`, …). Krijgen meerdere passes een
+  verschillende score, dan valt `read` in de else-tak:
+  ```python
+  result = str(len([record for record in data if record['result'] == '√']))
+  ```
+  Die telt `'√'`-records, en die zijn er bij zo'n prompt per definitie nul. Uitkomst: `'0'`.
+- Bewijs uit de echte data:
+  ```
+  gpt-5.6-luna    VERSCHILLEN1  opgeslagen: '7', '9', '5'          -> read() geeft '0'
+  claude-opus-4-5 VERSCHILLEN1  opgeslagen: '3','4','4','4','4'    -> read() geeft '0'
+  ```
+- `print_results` toont daardoor 0 voor elke multi-answer prompt met wisselende scores. Raakt
+  **niet** `print_report` (die gebruikt `get_last_n`, dat correct optelt) en **niet** de
+  HTML-visualisatie (die parseert `results.jsonl` zelf in JS).
+- Voorstel: in de else-tak het gemiddelde of de som van de cijferscores nemen in plaats van
+  `'√'` te tellen.
+- **Waarom LIKELY**: `read` levert ook `model_passes` aan `get_jobs` voor de cache-beslissing
+  (`_, _, model_passes = storage.read(...)`, run.py:35). Die derde waarde raak ik niet, maar
+  de semantiek van de eerste waarde veranderen is een keuze over wat "het resultaat" van
+  meerdere passes betekent: gemiddelde, som, of laatste. Dat is jouw definitie.
+
 ## Applied-log (Modus 1, SAFE-set)
 
 Baseline vóór de eerste wijziging:
@@ -292,18 +322,50 @@ Baseline vóór de eerste wijziging:
 Netto: **-73 / +30 regels** over `run.py`, `output.py`, `storage.py` (43 regels minder).
 Een `uv.lock`-wijziging die `uv run` zelf veroorzaakte is teruggedraaid; die hoort niet bij deze review.
 
+## Applied-log (Modus 1, LIKELY-set)
+
+Alle vijf LIKELY-findings kregen "fixen" in de interactieve ronde. Zelfde baseline als
+hierboven.
+
+| Finding | Keuze | Status | Wat er gebeurde |
+|---|---|---|---|
+| 5.2 excepties | Richting B: vangnet-except | `applied` | `except Exception: return 'E'` als laatste outer handler in `run_prompt`, met WHY-comment die de vijf justai-excepties benoemt |
+| 2.1 job-runners | Richting A: helpers extraheren | `applied` | `start_job`, `report_timeout`, `finish_job` erbij; beide runners gebruiken ze. Sequentieel blijft sequentieel en ongeshuffled |
+| 2.2 backoff | Fixen | `applied` | `backoff_or_give_up(label, try_, error)`; het quota-skip-verschil staat expliciet in beide callsites, met comment bij de reviewer-loop |
+| 3.1 storage | Fixen + tolerante reader | `applied` | `add` opent met `'a'` en schrijft één regel; `_write_all` verwijderd; `_read_all` slaat een onvolledige regel over |
+| 5.3 max_score | Beide rapportages | `applied` | `max_score()` helper; `print_report` gebruikt `passes * max_score(...)`; `print_results` telt per model `max_score × opgeslagen passes` op |
+
+**Correctie tijdens de pass**: mijn eerste versie van `print_results` gebruikte één vlakke
+`max_score(test_cases)` als noemer, wat `8/4` opleverde. `correct` telt daar over álle
+opgeslagen passes, dus de noemer moet `max_score × aantal passes` per model zijn. Rechtgezet
+vóór de gate.
+
+Gate-uitkomst na de LIKELY-set (zelfde baseline: ruff 3 errors, geen testsuite):
+
+| Gate-stap | Uitkomst |
+|---|---|
+| `ruff check --select F,E9 .` | All checks passed |
+| `ruff check --select F401,F841,C4,SIM .` | All checks passed |
+| Framework-check | n.v.t. |
+| Testsuite | afwezig — vervangen door een functionele verificatie van de vijf gewijzigde paden: **34/34 checks** (append-only, truncated-line recovery, read-aggregatie, beide runners end-to-end incl. skip_reason, backoff-reeks 5/10/20/40, alle 5 justai-excepties + ValueError/RuntimeError, max_score-sommen) |
+| Import-smoke | 5/5 ok |
+| Entrypoint-smoke | arg-parsing, `print_report`, `print_results`, `generate_standalone_html` alle ok |
+
+**Bewijs dat 5.2 een echte bug was**, gemeten tegen de vorige commit:
+```
+PRE-FIX:  ConnectionException ESCAPED run_prompt -> kaboom
+POST-FIX: run_prompt returns ('E', None, None)
+```
+
+Netto over beide passes: `run.py`, `output.py`, `storage.py` samen **-43 regels** (SAFE) plus
+**+20 regels** (LIKELY: 5.2 en 5.3 voegen bewust code toe, 2.1/2.2/3.1 halen weg).
+
 ## Nog te doen
 
-1. **5.2** — niet-afgevangen justai-excepties breken de hele run af. Bovenaan omdat dit het
-   enige finding met productie-effect is: je verliest nu bij één `ConnectionException`
-   halverwege alle nog niet opgeslagen resultaten van een lange run. Jouw beslissing omdat
-   de result-code-taxonomie (CLAUDE.md + `visualize.html`) jouw oppervlak is.
-2. **2.1** — de twee job-runners dedupliceren, ~35 regels. Jouw beslissing omdat richting B
-   het sequentiële pad wezenlijk verandert (shuffle, threading) en er geen test is die dat
-   afdekt.
-3. **2.2** — backoff-retry dedupliceren, ~12 regels. Jouw beslissing omdat de twee loops
-   verschillen in wanneer een model uit de run valt.
-4. **3.1** — `Storage.add` append-only, ~10 regels en O(n²) weg. Jouw beslissing omdat de
-   huidige full-rewrite een impliciete atomicity-garantie is.
-5. **5.3** — `print_report` moet `max_score` meenemen. Jouw beslissing omdat de vraag of
-   `print_results` dezelfde normalisatie moet krijgen een rapportage-keuze is.
+1. **5.4** — `Storage.read` geeft `'0'` voor elke multi-answer prompt met wisselende scores,
+   dus `print_results` toont 0 waar modellen 7, 9 of 5 van de 12 verschillen vonden. Bovenaan
+   omdat het je huidige output onjuist maakt. Jouw beslissing omdat "het resultaat van
+   meerdere passes" gedefinieerd moet worden (gemiddelde, som of laatste) en die definitie
+   ook bepaalt wat er in de tabel hoort te staan.
+
+Geen RISKY-findings in deze run.
