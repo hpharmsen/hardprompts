@@ -21,6 +21,16 @@ LAB_PREFIXES = {
     'grok': ('xAI', 'x-ai'),
     'kimi': ('Moonshot', 'moonshotai'),
     'moonshot': ('Moonshot', 'moonshotai'),
+    'minimax': ('MiniMax', 'minimax'),
+}
+
+# OpenRouter does not list every variant we benchmark. Fields here win over the fetched
+# spec; prices come from the provider's own pay-as-you-go page, per million tokens.
+SPEC_OVERRIDES = {
+    # OpenRouter has no highspeed variant, so the fuzzy match lands on plain M2.7: the context
+    # window is right, but the name and the price (M2.7 is $0.3/$1.2) are not.
+    'MiniMax-M2.7-highspeed': {'name': 'MiniMax: MiniMax M2.7 highspeed',
+                               'input_price': 0.6, 'output_price': 2.4},
 }
 
 
@@ -33,7 +43,7 @@ def load_models() -> list[str]:
 def get_lab_for_model(model_key: str) -> tuple[str, str]:
     '''Map model key to (lab name, openrouter prefix).'''
     for prefix, (lab, or_prefix) in LAB_PREFIXES.items():
-        if model_key.startswith(prefix):
+        if model_key.lower().startswith(prefix):  # MiniMax's model ids are mixed case
             return lab, or_prefix
     return 'Unknown', ''
 
@@ -104,7 +114,7 @@ def build_model_spec(model_key: str, or_model: dict, lab: str) -> dict:
         'output_price': price_per_million(pricing.get('completion')),
         'modality': arch.get('modality'),
         'supports_images': 'image' in arch.get('input_modalities', []),
-    }
+    } | SPEC_OVERRIDES.get(model_key, {})
 
 
 def main():

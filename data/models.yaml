@@ -24,4 +24,6 @@ models:
   - grok-4.20-0309-reasoning
   - kimi-k2.6
   - kimi-k3
+  - MiniMax-M3
+  - MiniMax-M2.7-highspeed   # M2.7 is text-only, so it skips the visual prompts
   # kimi-k2-thinking is only on OpenRouter, not on api.moonshot.ai (returns 404)
