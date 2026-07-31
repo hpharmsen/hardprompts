@@ -156,6 +156,20 @@
             padding: 40px;
             color: #888;
         }
+        .outlier-note {
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid #3a3a5a;
+            font-size: 13px;
+            color: #aaa;
+            line-height: 1.5;
+        }
+        .outlier-note:empty {
+            display: none;
+        }
+        .outlier-note b {
+            color: #ddd;
+        }
         .legend {
             display: flex;
             flex-wrap: wrap;
@@ -313,6 +327,7 @@
         <div class="chart-container">
             <canvas id="speed-chart"></canvas>
             <div class="legend" id="speed-legend"></div>
+            <div class="outlier-note" id="speed-note"></div>
         </div>
     </div>
 
@@ -320,6 +335,7 @@
         <div class="chart-container">
             <canvas id="price-chart"></canvas>
             <div class="legend" id="price-legend"></div>
+            <div class="outlier-note" id="price-note"></div>
         </div>
     </div>
 
@@ -356,6 +372,8 @@
             'Deepseek': '#6366f1',
             'Perplexity': '#22d3ee',
             'xAI': '#ef4444',
+            'Moonshot': '#ec4899',
+            'MiniMax': '#f97316',
             'default': '#888888'
         };
 
@@ -753,8 +771,39 @@
             }).filter(m => m.maxScore > 0);
         }
 
+        // Tukey's "far out" fence: Q3 + 3*IQR. The usual k=1.5 fence is too eager here -- with
+        // ~20 models it also flags the merely-expensive ones, which belong on the chart.
+        function splitOutliers(stats, getX) {
+            const xs = stats.map(getX).sort((a, b) => a - b);
+            if (xs.length < 4) return { kept: stats, outliers: [] };
+            const q = p => {
+                const pos = (xs.length - 1) * p, lo = Math.floor(pos);
+                return xs[lo] + (xs[Math.min(lo + 1, xs.length - 1)] - xs[lo]) * (pos - lo);
+            };
+            const iqr = q(0.75) - q(0.25);
+            if (iqr === 0) return { kept: stats, outliers: [] };
+            const fence = q(0.75) + 3 * iqr;
+            return {
+                kept: stats.filter(s => getX(s) <= fence),
+                outliers: stats.filter(s => getX(s) > fence)
+            };
+        }
+
+        function renderOutlierNote(containerId, outliers, describe) {
+            const el = document.getElementById(containerId);
+            if (!outliers.length) { el.innerHTML = ''; return; }
+            const items = outliers
+                .sort((a, b) => b.scorePct - a.scorePct)
+                .map(s => `<b>${s.name}</b> (${describe(s)}, ${s.scorePct.toFixed(1)}% score)`)
+                .join(', ');
+            const label = outliers.length === 1 ? 'uitschieter' : 'uitschieters';
+            el.innerHTML = `Buiten beeld gelaten als ${label}, omdat de schaal er anders `
+                + `onleesbaar van wordt: ${items}.`;
+        }
+
         function createSpeedChart() {
-            const stats = getModelStats().filter(m => m.avgDuration !== null);
+            const all = getModelStats().filter(m => m.avgDuration !== null);
+            const { kept: stats, outliers } = splitOutliers(all, s => s.avgDuration);
             const datasets = [];
             const labs = [...new Set(stats.map(s => s.lab))];
 
@@ -820,10 +869,12 @@
             });
 
             renderLegend('speed-legend', labs);
+            renderOutlierNote('speed-note', outliers, s => `${s.avgDuration.toFixed(1)}s gemiddeld`);
         }
 
         function createPriceChart() {
-            const stats = getModelStats().filter(m => m.outputPrice !== null && m.outputPrice !== undefined);
+            const all = getModelStats().filter(m => m.outputPrice !== null && m.outputPrice !== undefined);
+            const { kept: stats, outliers } = splitOutliers(all, s => s.outputPrice);
             const datasets = [];
             const labs = [...new Set(stats.map(s => s.lab))];
 
@@ -890,6 +941,7 @@
             });
 
             renderLegend('price-legend', labs);
+            renderOutlierNote('price-note', outliers, s => `$${s.outputPrice}/M tokens`);
         }
 
         function renderLegend(containerId, labs) {
