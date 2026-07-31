@@ -24,13 +24,17 @@ LAB_PREFIXES = {
     'minimax': ('MiniMax', 'minimax'),
 }
 
-# OpenRouter does not list every variant we benchmark. Fields here win over the fetched
-# spec; prices come from the provider's own pay-as-you-go page, per million tokens.
+# OpenRouter is not always the price we actually pay. Fields here win over the fetched spec;
+# prices are the provider's own list price per million tokens. Recheck when a promo ends.
 SPEC_OVERRIDES = {
     # OpenRouter has no highspeed variant, so the fuzzy match lands on plain M2.7: the context
     # window is right, but the name and the price (M2.7 is $0.3/$1.2) are not.
     'MiniMax-M2.7-highspeed': {'name': 'MiniMax: MiniMax M2.7 highspeed',
                                'input_price': 0.6, 'output_price': 2.4},
+    # OpenRouter runs a temporary 50% off promo on these two and so reports exactly half of
+    # OpenAI's list price. Sol, nano and mini carry no promo and match, so they need no entry.
+    'gpt-5.6-terra': {'input_price': 2.0, 'output_price': 12.0},
+    'gpt-5.6-luna': {'input_price': 0.2, 'output_price': 1.2},
 }
 
 
