@@ -3,7 +3,7 @@ import re
 from collections import defaultdict
 from pathlib import Path
 
-from storage import Storage
+from storage import Storage, pass_score
 
 RED = '\033[31m'
 GREEN = '\033[32m'
@@ -20,7 +20,7 @@ def max_score(test_cases) -> int:
 def print_results(models, test_cases):
     storage = Storage()
     test_names = list(test_cases.keys())
-    correct = defaultdict(int)
+    correct = defaultdict(float)
     attainable = defaultdict(int)
     W = 13
     MODEL_W = 30
@@ -52,20 +52,10 @@ def print_results(models, test_cases):
             # Each stored pass is worth max_score points, so the attainable total depends on
             # how many passes this model actually ran for this test.
             attainable[model_name] += test_cases[test_name].get('max_score', 1) * passes
-            if res == '√':
-                correct[model_name] += passes
-            elif is_int(res):
-                correct[model_name] += int(res)
+            # res is the score of a single pass, so multiply by the number of passes.
+            correct[model_name] += pass_score(res) * passes
         # Print model total at end of row
-        print(f'  {correct[model_name]}/{attainable[model_name]}')
-
-
-def is_int(s):
-    try:
-        int(s)
-        return True
-    except (TypeError, ValueError):
-        return False
+        print(f'  {correct[model_name]:g}/{attainable[model_name]}')
 
 
 def print_report(models, test_cases, passes):
@@ -80,7 +70,7 @@ def print_report(models, test_cases, passes):
     for model in models:
         correct, avg_duration = storage.get_last_n(model, test_names, passes)
         duration_str = f'{avg_duration:.2f}s' if avg_duration else 'N/A'
-        print(f'{model:<30} {correct:>5}/{max_correct:<4} {duration_str:>14}')
+        print(f'{model:<30} {correct:>5g}/{max_correct:<4} {duration_str:>14}')
 
 
 def generate_standalone_html(output_path: str = 'visualize.html'):

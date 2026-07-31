@@ -22,6 +22,13 @@ te leggen; wat op de "Nog te doen"-lijst van `latest.md` staat hoort hier juist 
   quota-uitputting en gooit het model uit de run, de reviewer-loop niet. Een reviewer-ratelimit
   zegt niets over het model dat getest wordt. `backoff_or_give_up` dekt alleen het
   wachten-en-opgeven, niet die beslissing. (2026-07-25)
+- "Het resultaat van meerdere passes" is het **gemiddelde per pass**, niet de som en niet de
+  laatste (finding 5.4, gekozen door HP). `Storage.read` geeft bij wisselende resultaten dus
+  het gemiddelde terug, en `print_results` vermenigvuldigt dat weer met het aantal passes voor
+  het rijtotaal. Eén scoreregel voor alle resultaattypen: `pass_score()` in `storage.py`
+  (`'√'` = 1, cijferstring = eigen waarde, rest 0), gedeeld met `get_last_n`. Gevolg: een
+  gemengde `√`/`X`-cel toont een fractie (`0.666`) in plaats van een telling (`2`); dat is de
+  bedoeling, want de cel toont per-pass-scores. Stel som of laatste niet opnieuw voor. (2026-07-25)
 - Deze comments blijven staan; het zijn WHY's, niet herhalingen van de code:
   - `output.py` `# Read source HTML template (use template file to avoid circular reads)` —
     verklaart waarom er een aparte template-file is en niet één `visualize.html` die zichzelf

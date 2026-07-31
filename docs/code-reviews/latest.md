@@ -9,9 +9,9 @@ automatisch te verifiëren; dat is meegewogen in de labels.
 
 ## Samenvatting
 - Totaal findings: 19 (SAFE: 13, LIKELY: 6, RISKY: 0) — 5.4 kwam er tijdens de fix-pass bij
-- Toegepast: 18 (alle 13 SAFE + alle 5 LIKELY uit de interactieve ronde), 1 open (5.4)
-- Netto regels: -43 (SAFE) en +20 (LIKELY, waar 5.2 en 5.3 bewust code toevoegen)
-- Twee gedragsdefecten gevonden en gefixt (5.2, 5.3), één gevonden en open (5.4)
+- Toegepast: 19 (alle 13 SAFE + alle 6 LIKELY, waarvan 5.4 in een aparte ronde)
+- Netto regels: -43 (SAFE) en +14 (LIKELY, waar 5.2 en 5.3 bewust code toevoegen)
+- Drie gedragsdefecten gevonden en gefixt (5.2, 5.3, 5.4)
 
 ## Bijvangst
 
@@ -266,7 +266,7 @@ formaatbeslissing, geen reductie.
 ## Nieuw gevonden tijdens de fix-pass
 
 ### Finding 5.4 [LIKELY] — `Storage.read` geeft altijd `'0'` voor multi-answer prompts, storage.py:44-52
-- **Nog niet gefixt**, gevonden bij het verifiëren van 5.3.
+- **Gefixt** (gemiddelde, zie beslissing onderaan deze finding); gevonden bij het verifiëren van 5.3.
 - Bij VERSCHILLEN1/2 slaat `run_prompt` de reviewer-score op als cijferstring
   (`passed = str(message['aantal_goed'])`, dus `'7'`, `'4'`, …). Krijgen meerdere passes een
   verschillende score, dan valt `read` in de else-tak:
@@ -288,6 +288,14 @@ formaatbeslissing, geen reductie.
   (`_, _, model_passes = storage.read(...)`, run.py:35). Die derde waarde raak ik niet, maar
   de semantiek van de eerste waarde veranderen is een keuze over wat "het resultaat" van
   meerdere passes betekent: gemiddelde, som, of laatste. Dat is jouw definitie.
+- **Gekozen: gemiddelde** (HP). De else-tak geeft nu het gemiddelde per pass, met één
+  scoreregel voor alle resultaattypen: `pass_score()` in `storage.py` (`'√'` = 1, cijferstring
+  = eigen waarde, al het andere 0). `print_results` vermenigvuldigt die per-pass-score weer
+  met `passes`, wat óók de all-equal-cijfertak repareert (5 × `'4'` telde als 4/60, nu 20/60).
+  Voor gemengde `√`/`X`-cellen verandert alleen de weergave (`2` → `0.666`); het rijtotaal
+  blijft daar identiek. `get_last_n` gebruikt dezelfde `pass_score` en is ongewijzigd in
+  gedrag. Geverifieerd op de echte data: `'7','9','5'` → `7`, `'3','4','4','4','4'` → `3.8`,
+  beide voorheen `'0'`.
 
 ## Applied-log (Modus 1, SAFE-set)
 
@@ -362,10 +370,6 @@ Netto over beide passes: `run.py`, `output.py`, `storage.py` samen **-43 regels*
 
 ## Nog te doen
 
-1. **5.4** — `Storage.read` geeft `'0'` voor elke multi-answer prompt met wisselende scores,
-   dus `print_results` toont 0 waar modellen 7, 9 of 5 van de 12 verschillen vonden. Bovenaan
-   omdat het je huidige output onjuist maakt. Jouw beslissing omdat "het resultaat van
-   meerdere passes" gedefinieerd moet worden (gemiddelde, som of laatste) en die definitie
-   ook bepaalt wat er in de tabel hoort te staan.
+Niets open. 5.4 is afgehandeld met de keuze "gemiddelde"; zie `decisions.md`.
 
 Geen RISKY-findings in deze run.

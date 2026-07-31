@@ -3,6 +3,16 @@ import os
 from typing import List, Dict, Tuple, Optional
 
 
+def pass_score(result: Optional[str]) -> float:
+    """Points for one stored pass: '√' is 1, a numeric string its own value, anything else 0."""
+    if result == '√':
+        return 1.0
+    try:
+        return float(result)
+    except (TypeError, ValueError):
+        return 0.0
+
+
 class Storage:
     """
     Class to store and retrieve results from a JSONL file.
@@ -47,13 +57,13 @@ class Storage:
         elif all(record['result'] == data[0]['result'] for record in data):
             result = data[0]['result']
         else:
-            # Mixed results: report how many passes were correct
-            result = str(len([record for record in data if record['result'] == '√']))
+            # Mixed results: report the average score per pass
+            result = f"{sum(pass_score(record['result']) for record in data) / len(data):g}"
         durations = [record['duration'] for record in data if record['duration']]
         duration = sum(durations) / len(durations) if durations else None
         return result, duration, len(data)
 
-    def get_last_n(self, model: str, test_names: List[str], n: int) -> Tuple[int, float | None]:
+    def get_last_n(self, model: str, test_names: List[str], n: int) -> Tuple[float, float | None]:
         """Returns correct count and avg duration over the last n results per test."""
         data = self.filter([model], test_names)
         # Group by test_name and take last n per test
@@ -62,15 +72,12 @@ class Storage:
             test = record['test_name']
             by_test.setdefault(test, []).append(record)
 
-        correct = 0
+        correct = 0.0
         durations = []
         for test_name in test_names:
             records = by_test.get(test_name, [])[-n:]
             for r in records:
-                if r['result'] == '√':
-                    correct += 1
-                elif r['result'] and r['result'].isdigit():
-                    correct += int(r['result'])
+                correct += pass_score(r['result'])
                 if r['duration']:
                     durations.append(r['duration'])
 
