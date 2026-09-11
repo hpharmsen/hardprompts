@@ -28,6 +28,27 @@ models.yaml      List of model identifiers to test
 input/           Images for visual prompts
 ```
 
+### Effort Variants
+
+A model identifier may carry an effort suffix: `claude-fable-5@max`. `split_effort()` in
+`modelspecs.py` splits it, `run_prompt()` passes the level to justai as `effort=`, and every
+variant is a separate row in `results.jsonl` with its own cache and score. Only add levels the
+provider supports natively (justai's README lists them per provider); the rest are silently
+downmapped and cost a full run to reproduce a result you already have. High levels also get a
+longer job timeout via `JOB_TIMEOUTS` in `run.py`.
+
+`run_prompt()` sets `max_tokens` explicitly via `max_tokens_for()` (the model's own `max_output`,
+capped at 32768). Do not remove this: justai defaults Anthropic to 800 tokens, which a thinking
+model such as Fable 5 spends entirely on reasoning, returning no text block. The benchmark then
+scored that as a `B`, so those prompts looked failed while they were only cut off.
+
+Each result record stores `tokens_in` / `tokens_out` whenever tokens were billed, including on
+failures: a call that spent its whole budget on reasoning and returned no answer is charged all
+the same, and `spent_tokens()` reads it from justai's counters after the exception. The "Score vs
+Kosten" chart multiplies these by the prices in `models.jsonl` to plot what one full benchmark
+run costs, following the vision toggle. Models with a prompt that lacks a token count are left
+out of that chart rather than priced on partial data.
+
 ### Data Flow
 
 1. `main.py` parses args, loads test cases from `prompts.toml` and models from `models.yaml`

@@ -1,29 +1,54 @@
 models:
-  - gpt-5.4-nano
-  - gpt-5.4-mini
+  # - gpt-5.4-nano   vervangen door gpt-5.6-luna, zelfde prijs en 48/48 tegen 24/48
+  # - gpt-5.4-mini   idem, luna is goedkoper: $0.2/$1.2 tegen $0.75/$4.5
   - gpt-5.6-luna
   - gpt-5.6-terra
   - gpt-5.6-sol
+  - gpt-6-astra          # $10/$50 per M tokens, dus duur. gpt-6-astra-pro kost hetzelfde maar staat er niet bij
   # - gpt-5.2-pro VEEL TE DUUR
   #- gpt-4o-mini
   #- gpt-4.1
   #- o3-mini
   - claude-haiku-4-5
   - claude-sonnet-5
-  - claude-opus-4-7
-  - claude-opus-4-8
-  - claude-fable-5
+  # - claude-opus-4-7   vervangen door claude-opus-5, zelfde prijs
+  # - claude-opus-4-8   idem, zelfde prijs. Effort-varianten verhuisd naar opus-5
+  - claude-opus-5
+  # - claude-fable-5    vervangen door claude-fable-5-1, zelfde prijs. Varianten idem verhuisd
+  - claude-fable-5-1
   - gemini-2.5-flash-lite
   - gemini-3.1-flash-lite
-  - gemini-3.5-flash
+  - gemini-3.5-flash-lite
+  # - gemini-3.5-flash   vervangen door gemini-3.8-flash, half zo duur
+  - gemini-3.8-flash   # $0.75/$3.75 is een introprijs t/m 2026-12-31, daarna $1.50/$7.50
   - gemini-3.1-pro-preview
-  - deepseek-chat      # deepseek-reasoner does not support JSON
+  # - deepseek-v4-flash  vervangen door deepseek-flash, waar het sinds 2026-09-10 zelf naar routeert
+  # - deepseek-v4-pro    idem, vanaf 2026-09-14 04:00 UTC. api.deepseek.com dropte deepseek-chat/-reasoner bij V4
+  - deepseek-flash     # V4.1 Flash. Kan wel beeld, anders dan V4, dus draait de visuele prompts mee
   - sonar-pro          # Error met output format
   # - sonar-reasoning   # idem
-  - grok-4.5
+  - grok-4.5           # grok-4.6 kost hetzelfde en vervangt dit, maar heeft nog geen geldige rij
+  - grok-4.6           # 24x E op 2026-09-06: xAI-credits op, geen modelfout. Draai met --no-cache
   - grok-4.20-0309-reasoning
   - kimi-k2.6
   - kimi-k3
   - MiniMax-M3
-  - MiniMax-M2.7-highspeed   # M2.7 is text-only, so it skips the visual prompts
+  # - MiniMax-M2.7-highspeed   vervangen door M3: half zo duur, zelfde 40/48, en op elke prompt sneller
   # kimi-k2-thinking is only on OpenRouter, not on api.moonshot.ai (returns 404)
+
+  # Effort variants: "model@level" runs the same model at a different reasoning depth.
+  # The entry without a suffix above stays the provider default, so it is the reference point.
+  # Only add levels the provider supports natively; justai silently downmaps the rest, which
+  # would cost a full run to reproduce a result you already have.
+  - claude-fable-5-1@low
+  - claude-fable-5-1@high
+  - claude-fable-5-1@max
+  - claude-opus-5@low
+  - claude-opus-5@high
+  - claude-opus-5@max
+  - gpt-5.6-terra@low
+  - gpt-5.6-terra@high
+  - gpt-5.6-terra@max        # OpenAI's SDK caps at xhigh, so justai maps max down and warns
+  - gemini-3.1-pro-preview@low
+  - gemini-3.1-pro-preview@medium
+  - gemini-3.1-pro-preview@high   # Gemini 3 stops at high; xhigh and max are the same run

@@ -303,7 +303,7 @@
     <div class="tabs">
         <button class="tab active" onclick="showTab('table')">Tabel</button>
         <button class="tab" onclick="showTab('speed')">Score vs Snelheid</button>
-        <button class="tab" onclick="showTab('price')">Score vs Prijs</button>
+        <button class="tab" onclick="showTab('price')">Score vs Kosten</button>
         <label class="vision-toggle">
             <input type="checkbox" id="include-vision" checked onchange="onVisionToggle()">
             <span>Include vision</span>
@@ -599,6 +599,20 @@
             }
         }
 
+        // Result codes for a run that produced no answer. justai reports the tokens of a call
+        // that was billed before it failed, so one of these *without* a token count means
+        // nothing was billed at all: no spend, rather than missing data.
+        const ERROR_CODES = new Set(['T', 'R', 'B', 'E', 'G', 'N', 'I']);
+
+        // Dollars for one run. Null when the run never completed or the model has no price,
+        // and for every record written before hardprompts logged token counts.
+        function recordCost(r) {
+            const info = modelsData[r.model];
+            if (!info || r.tokens_in == null || r.tokens_out == null) return null;
+            if (info.input_price == null || info.output_price == null) return null;
+            return (r.tokens_in * info.input_price + r.tokens_out * info.output_price) / 1e6;
+        }
+
         function processData() {
             aggregatedData = {};
 
@@ -609,11 +623,18 @@
                         model: r.model,
                         test_name: r.test_name,
                         results: [],
-                        durations: []
+                        durations: [],
+                        costs: [],
+                        costUnknown: false
                     };
                 }
                 aggregatedData[key].results.push(r.result);
                 if (r.duration) aggregatedData[key].durations.push(r.duration);
+                const cost = recordCost(r);
+                if (cost !== null) aggregatedData[key].costs.push(cost);
+                // An answered run without a token count predates token logging, so what it
+                // cost is genuinely unknown. Counting it as zero would flatter the model.
+                else if (!ERROR_CODES.has(r.result)) aggregatedData[key].costUnknown = true;
             });
 
             Object.values(aggregatedData).forEach(agg => {
@@ -633,6 +654,9 @@
                 agg.count = agg.results.length;
                 agg.avgDuration = agg.durations.length > 0
                     ? agg.durations.reduce((a, b) => a + b, 0) / agg.durations.length
+                    : null;
+                agg.avgCost = agg.costs.length > 0
+                    ? agg.costs.reduce((a, b) => a + b, 0) / agg.costs.length
                     : null;
             });
         }
@@ -736,6 +760,9 @@
 
             return models.map(model => {
                 let score = 0, maxScore = 0, totalDuration = 0, durationCount = 0;
+                // One prompt with unknown spend means we can only price a part of the benchmark,
+                // and a partial sum next to complete ones would read as "this model is cheaper".
+                let benchmarkCost = 0, costComplete = true, pricedTests = 0;
 
                 tests.forEach(test => {
                     const key = `${model}|${test}`;
@@ -752,6 +779,9 @@
                             durationCount += agg.durations.length;
                         }
                     }
+                    // A prompt on which every run failed adds nothing: no answer, no spend.
+                    if (agg && agg.avgCost !== null) { benchmarkCost += agg.avgCost; pricedTests++; }
+                    else if (!agg || agg.costUnknown) costComplete = false;
                 });
 
                 const modelInfo = modelsData[model] || {};
@@ -766,7 +796,10 @@
                     maxScore,
                     scorePct,
                     avgDuration,
-                    outputPrice: modelInfo.output_price
+                    outputPrice: modelInfo.output_price,
+                    // pricedTests guards the model that failed every single prompt: complete,
+                    // free, and worthless, which would otherwise plot at the origin.
+                    benchmarkCost: costComplete && pricedTests > 0 ? benchmarkCost : null
                 };
             }).filter(m => m.maxScore > 0);
         }
@@ -873,8 +906,10 @@
         }
 
         function createPriceChart() {
-            const all = getModelStats().filter(m => m.outputPrice !== null && m.outputPrice !== undefined);
-            const { kept: stats, outliers } = splitOutliers(all, s => s.outputPrice);
+            const all = getModelStats();
+            const priced = all.filter(m => m.benchmarkCost !== null);
+            const unpriced = all.filter(m => m.benchmarkCost === null);
+            const { kept: stats, outliers } = splitOutliers(priced, s => s.benchmarkCost);
             const datasets = [];
             const labs = [...new Set(stats.map(s => s.lab))];
 
@@ -883,7 +918,7 @@
                 datasets.push({
                     label: lab,
                     data: labStats.map(s => ({
-                        x: s.outputPrice,
+                        x: s.benchmarkCost,
                         y: s.scorePct,
                         label: s.name,
                         modelKey: s.model
@@ -910,7 +945,7 @@
                     plugins: {
                         title: {
                             display: true,
-                            text: 'Score vs Output Token Prijs',
+                            text: 'Score vs Kosten van de hele benchmark',
                             color: '#fff',
                             font: { size: 18 }
                         },
@@ -918,7 +953,7 @@
                             callbacks: {
                                 label: (ctx) => {
                                     const p = ctx.raw;
-                                    return `${p.label}: ${p.y.toFixed(1)}% score, $${p.x}/M tokens (klik voor details)`;
+                                    return `${p.label}: ${p.y.toFixed(1)}% score, $${p.x.toFixed(3)} per run (klik voor details)`;
                                 }
                             }
                         },
@@ -926,7 +961,7 @@
                     },
                     scales: {
                         x: {
-                            title: { display: true, text: 'Output prijs ($/M tokens)', color: '#aaa' },
+                            title: { display: true, text: 'Kosten van één volledige benchmarkrun ($)', color: '#aaa' },
                             ticks: { color: '#aaa' },
                             grid: { color: '#333' }
                         },
@@ -941,7 +976,15 @@
             });
 
             renderLegend('price-legend', labs);
-            renderOutlierNote('price-note', outliers, s => `$${s.outputPrice}/M tokens`);
+            renderOutlierNote('price-note', outliers, s => `$${s.benchmarkCost.toFixed(2)} per run`);
+            if (unpriced.length) {
+                const names = unpriced.map(s => `<b>${s.name}</b>`).join(', ');
+                document.getElementById('price-note').innerHTML +=
+                    `<div>Nog geen kostenpunt voor ${names}: van minstens één prompt is onbekend ` +
+                    `wat de run kostte, omdat het resultaat dateert van voor het loggen van tokens ` +
+                    `of omdat er nooit een antwoord kwam. Eén extra pass (<code>-n=2</code>) haalt ` +
+                    `ze erbij.</div>`;
+            }
         }
 
         function renderLegend(containerId, labs) {
