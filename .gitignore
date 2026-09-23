@@ -5,6 +5,7 @@ __pycache__/
 .idea
 /prompt_cache.pickle
 /data/results.jsonl
+/data/results_before_purge.jsonl
 /jobs.log
 /storage_bak.jsonl
 .DS_Store
