@@ -8,13 +8,17 @@ hardprompts is an LLM benchmarking tool that runs test prompts against multiple 
 
 ## Commands
 
-- **Run all tests**: `python main.py`
-- **Run specific models**: `python main.py gpt-5 claude-sonnet-4-5`
-- **Run specific prompts**: `python main.py STRAWBERRY APPLES`
-- **Run concurrently**: `python main.py -c` or `python main.py --concurrent`
-- **Include visual prompts**: `python main.py -v` or `python main.py --visual`
-- **Multiple passes**: `python main.py -n=3`
-- **Disable cache**: `python main.py --no-cache`
+Dependencies are managed with `uv` (`pyproject.toml` + `uv.lock`), so run via `uv run`. In a
+non-interactive shell `uv` is often not on the PATH; use `.venv/bin/python` there instead.
+
+- **Run all tests**: `uv run python main.py`
+- **Run specific models**: `uv run python main.py gpt-5 claude-sonnet-4-5`
+- **Run specific prompts**: `uv run python main.py STRAWBERRY APPLES`
+- **Run concurrently**: `uv run python main.py -c` or `--concurrent`
+- **Include visual prompts**: `uv run python main.py -v` or `--visual`
+- **Multiple passes**: `uv run python main.py -n=3`
+- **Disable cache**: `uv run python main.py --no-cache`
+- **Refresh model specs**: `uv run python modelspecs.py`
 
 ## Architecture
 
