@@ -38,11 +38,22 @@ SPEC_OVERRIDES = {
     # DeepSeek prices peak/off-peak, off-peak being half of peak. We record the peak rate,
     # $0.3/$1.2 since 2026-09-10 04:00 UTC, where OpenRouter lists the off-peak one.
     'deepseek-flash': {'input_price': 0.3, 'output_price': 1.2},
+    # Same peak/off-peak story for V4-Pro: the docs list $1.32/$3.96 peak where OpenRouter
+    # reports something in between. The key resolves to DeepSeek-V4-Pro-0813.
+    'deepseek-v4-pro': {'input_price': 1.32, 'output_price': 3.96},
+    # xAI lists grok-4.7 at $2/$6 under 200k prompt tokens, same as grok-4.6. OpenRouter is
+    # running it 20% off. Our prompts stay far under 200k, so the low tier is the right one.
+    'grok-4.7': {'input_price': 2.0, 'output_price': 6.0},
 }
 
 # api.deepseek.com calls V4.1 Flash deepseek-flash, OpenRouter calls it deepseek-v4.1-flash,
 # and neither normalizes into the other. We follow the lab's id, since that is what justai sends.
-OPENROUTER_IDS = {'deepseek-flash': 'deepseek/deepseek-v4.1-flash'}
+# deepseek-v4-pro resolves to the 0813 snapshot at the lab, while OpenRouter's unsuffixed id is
+# still the April one, so pin it or the name records a predecessor.
+OPENROUTER_IDS = {
+    'deepseek-flash': 'deepseek/deepseek-v4.1-flash',
+    'deepseek-v4-pro': 'deepseek/deepseek-v4-pro-0813',
+}
 
 
 MAX_TOKENS_CAP = 32768

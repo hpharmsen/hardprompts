@@ -13,7 +13,7 @@ from output import GREEN, MAGENTA, RED, RESET, YELLOW
 from storage import Storage
 
 MAX_CONCURRENT_JOBS = 12
-REVIEW_MODEL = 'claude-opus-4-5'
+REVIEW_MODEL = 'claude-opus-5'
 
 # Reasoning effort buys thinking time, so the job timeout has to move with it. Without this a
 # high-effort run measures our own alarm instead of the model and lands as a T.
@@ -298,7 +298,9 @@ def run_prompt(pass_, model_name, test_case: dict) -> tuple[str, float | None, s
         message = None
         for review_try in range(5):
             try:
-                with Model(REVIEW_MODEL) as reviewer:
+                # Same output limit as the model under test: Opus 5 thinks by default and
+                # max_tokens caps thinking plus answer, so justai's 800 would leave no text.
+                with Model(REVIEW_MODEL, **output_limit(REVIEW_MODEL)) as reviewer:
                     message = reviewer.prompt(follow_up_prompt, return_json=True, cached=False)
                 break
             except RatelimitException as e:
