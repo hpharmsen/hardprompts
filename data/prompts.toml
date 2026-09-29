@@ -174,8 +174,8 @@ Het juiste antwoord is:
 
 Geef aan welke van deze twaalf antwoorden de proefpersoon goed had gevonden (true) of niet had gevonden (false) en geef me ook het aantal goede antwoorden.
 Geef je antwoord in json in het volgende formaat:
-{'antwoorden': [true, true, false, false, true, true, true true, false, false, false, true],
- 'aantal_goed': 3}"""
+{"antwoorden": [true, true, false, false, true, true, true, true, false, false, false, true],
+ "aantal_goed": 3}"""
 
 
 [VERSCHILLEN2]
@@ -203,8 +203,8 @@ Het juiste antwoord is:
 
 Geef aan welke van deze zes antwoorden de proefpersoon goed had gevonden (true) of niet had gevonden (false) en geef me ook het aantal goede antwoorden.
 Geef je antwoord in json in het volgende formaat:
-{'antwoorden': [true, true, false, false, true, true],
- 'aantal_goed': 3}"""
+{"antwoorden": [true, true, false, false, true, true],
+ "aantal_goed": 3}"""
 
 [WORDLE]
 prompt = """Welk Engels woord moet dit zijn?

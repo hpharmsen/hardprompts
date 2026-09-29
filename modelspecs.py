@@ -26,15 +26,12 @@ LAB_PREFIXES = {
 }
 
 # OpenRouter is not always the price we actually pay. Fields here win over the fetched spec;
-# prices are the provider's own list price per million tokens. Recheck when a promo ends.
+# prices are the provider's own list price per million tokens, request_price is dollars per
+# 1000 requests. Recheck when a promo ends.
 SPEC_OVERRIDES = {
-    # OpenRouter has no highspeed variant, so the fuzzy match lands on plain M2.7: the context
-    # window is right, but the name and the price (M2.7 is $0.3/$1.2) are not.
-    'MiniMax-M2.7-highspeed': {'name': 'MiniMax: MiniMax M2.7 highspeed', 'input_price': 0.6, 'output_price': 2.4},
-    # OpenRouter runs a temporary 50% off promo on these two and so reports exactly half of
-    # OpenAI's list price. Sol, nano and mini carry no promo and match, so they need no entry.
+    # OpenRouter runs a temporary 50% off promo on terra and so reports exactly half of
+    # OpenAI's list price.
     'gpt-5.6-terra': {'input_price': 2.0, 'output_price': 12.0},
-    'gpt-5.6-luna': {'input_price': 0.2, 'output_price': 1.2},
     # DeepSeek prices peak/off-peak, off-peak being half of peak. We record the peak rate,
     # $0.3/$1.2 since 2026-09-10 04:00 UTC, where OpenRouter lists the off-peak one.
     'deepseek-flash': {'input_price': 0.3, 'output_price': 1.2},
@@ -44,6 +41,12 @@ SPEC_OVERRIDES = {
     # xAI lists grok-4.7 at $2/$6 under 200k prompt tokens, same as grok-4.6. OpenRouter is
     # running it 20% off. Our prompts stay far under 200k, so the low tier is the right one.
     'grok-4.7': {'input_price': 2.0, 'output_price': 6.0},
+    # $0.75/$3.75 is an intro price through 2026-12-31. We record the price that follows, so a
+    # model is never judged on a temporary discount.
+    'gemini-3.8-flash': {'input_price': 1.5, 'output_price': 7.5},
+    # Perplexity also charges per request: $6 per 1000 at the default search context 'low',
+    # which is what justai sends (usage.cost.request_cost = 0.006).
+    'sonar-pro': {'request_price': 6.0},
 }
 
 # api.deepseek.com calls V4.1 Flash deepseek-flash, OpenRouter calls it deepseek-v4.1-flash,

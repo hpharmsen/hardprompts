@@ -20,7 +20,7 @@ benchmarken. Draait volledig automatisch, zonder tussentijds akkoord.
 - **Nooit regels weggooien.** Opruimen is uitcommentariëren met een reden erachter, in de stijl
   van de bestaande `# - gpt-5.2-pro VEEL TE DUUR` regel. `data/results.jsonl` blijft altijd ongemoeid,
   daar zit de historie in.
-- **`model@effort` regels zijn geen modellen.** Een entry als `claude-fable-5@low` is dezelfde
+- **`model@effort` regels zijn geen modellen.** Een entry als `claude-opus-5-5@low` is dezelfde
   model-id op een andere redeneerdiepte. Strip het `@level` deel voordat je vergelijkt, net als
   `split_effort()` in `modelspecs.py` doet, en tel ze niet mee als bestaande of nieuwe modellen.
 
@@ -60,7 +60,7 @@ nieuwsartikel schrijft. Twee valkuilen die eerder zijn misgegaan:
 - **De marketingnaam is niet de id.** "OpenAI Astra" heet `gpt-6-astra`, "Claude 5.1" bestaat niet
   en is `claude-fable-5-1`. Zoek de id op bij het lab zelf voordat je hem toevoegt.
 - **Anthropic schrijft versiepunten als streepjes** (`claude-fable-5-1`, niet `claude-fable-5.1`).
-  De andere labs gebruiken meestal wel punten (`gpt-5.6-terra`, `grok-4.6`, `kimi-k2.6`).
+  De andere labs gebruiken meestal wel punten (`gpt-5.6-terra`, `grok-4.7`, `kimi-k2.6`).
 
 Controleer daarna dat `justai` het model kan routeren: de prefix moet voorkomen in
 `ModelFactory.create` in `justai/models/modelfactory.py`. Matcht de prefix niet, dan geeft elke
@@ -85,7 +85,7 @@ zegt niets over de kwaliteit van het model, dat zijn infrastructuurfouten: geen 
 rate limit, timeout. Alleen `X` en breuken zijn echte foute antwoorden. Bij twijfel: laten staan
 en melden.
 
-Twee prijsklassen naast elkaar zijn geen vervanging. `gpt-5.6-luna` en `gpt-5.6-terra` blijven
+Twee prijsklassen naast elkaar zijn geen vervanging. `gpt-6-luna` en `gpt-5.6-terra` blijven
 allebei staan, ook al is terra beter, want terra is tien keer zo duur.
 
 Een model en zijn eigen effort-varianten zijn nooit elkaars vervanger, die horen bij elkaar.

@@ -13,7 +13,7 @@ from output import GREEN, MAGENTA, RED, RESET, YELLOW
 from storage import Storage
 
 MAX_CONCURRENT_JOBS = 12
-REVIEW_MODEL = 'claude-opus-5'
+REVIEW_MODEL = 'claude-opus-5-5'
 
 # Reasoning effort buys thinking time, so the job timeout has to move with it. Without this a
 # high-effort run measures our own alarm instead of the model and lands as a T.
@@ -189,7 +189,7 @@ def run_prompt(pass_, model_name, test_case: dict) -> tuple[str, float | None, s
 
     skip_reason is set when the model should be skipped for remaining runs.
     tokens is (input, output) for the model under test, or None when nothing was billed.
-    model_name may carry an effort suffix: "claude-fable-5@max".
+    model_name may carry an effort suffix: "claude-opus-5-5@max".
     """
     agent = None
     base_model, effort = split_effort(model_name)

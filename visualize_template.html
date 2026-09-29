@@ -352,7 +352,7 @@
         let includeVision = true;
         let currentModelKey = null;
 
-        const VISION_TESTS = ['BALKON1', 'TERRAS2', 'TERRAS3', 'VERSCHILLEN1', 'VERSCHILLEN2'];
+        let visionTests = [];
         let testOrder = [];
         let testMaxScores = {};
         let modelOrder = [];
@@ -566,8 +566,9 @@
                 // Extract section names [NAME] in order
                 testOrder = [...promptsText.matchAll(/^\[([A-Z0-9_]+)\]/gm)].map(m => m[1]);
 
-                // Extract max_score per test section (defaults to 1)
+                // Extract max_score per test section (defaults to 1) and which tests carry an image
                 testMaxScores = {};
+                visionTests = [];
                 const sectionMatches = [...promptsText.matchAll(/^\[([A-Z0-9_]+)\]/gm)];
                 for (let i = 0; i < sectionMatches.length; i++) {
                     const start = sectionMatches[i].index + sectionMatches[i][0].length;
@@ -575,6 +576,7 @@
                     const body = promptsText.slice(start, end);
                     const maxMatch = body.match(/^max_score\s*=\s*(\d+)/m);
                     if (maxMatch) testMaxScores[sectionMatches[i][1]] = parseInt(maxMatch[1]);
+                    if (/^image\s*=/m.test(body)) visionTests.push(sectionMatches[i][1]);
                 }
 
                 // Extract model names (lines starting with "  - " that are not comments)
@@ -610,7 +612,9 @@
             const info = modelsData[r.model];
             if (!info || r.tokens_in == null || r.tokens_out == null) return null;
             if (info.input_price == null || info.output_price == null) return null;
-            return (r.tokens_in * info.input_price + r.tokens_out * info.output_price) / 1e6;
+            // Some providers (Perplexity) add a fee per request, priced per 1000 requests.
+            return (r.tokens_in * info.input_price + r.tokens_out * info.output_price) / 1e6
+                + (info.request_price || 0) / 1000;
         }
 
         function processData() {
@@ -982,8 +986,8 @@
                 document.getElementById('price-note').innerHTML +=
                     `<div>Nog geen kostenpunt voor ${names}: van minstens één prompt is onbekend ` +
                     `wat de run kostte, omdat het resultaat dateert van voor het loggen van tokens ` +
-                    `of omdat er nooit een antwoord kwam. Eén extra pass (<code>-n=2</code>) haalt ` +
-                    `ze erbij.</div>`;
+                    `of omdat er nooit een antwoord kwam. Een verse pass met <code>--no-cache</code> ` +
+                    `op die modellen haalt ze erbij.</div>`;
             }
         }
 
@@ -1017,7 +1021,7 @@
                 if (!testOrder.includes(t)) tests.push(t);
             });
             if (!includeVision) {
-                tests = tests.filter(t => !VISION_TESTS.includes(t));
+                tests = tests.filter(t => !visionTests.includes(t));
             }
             return tests;
         }

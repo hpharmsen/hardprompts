@@ -34,7 +34,7 @@ input/           Images for visual prompts
 
 ### Effort Variants
 
-A model identifier may carry an effort suffix: `claude-fable-5@max`. `split_effort()` in
+A model identifier may carry an effort suffix: `claude-opus-5-5@max`. `split_effort()` in
 `modelspecs.py` splits it, `run_prompt()` passes the level to justai as `effort=`, and every
 variant is a separate row in `results.jsonl` with its own cache and score. Only add levels the
 provider supports natively (justai's README lists them per provider); the rest are silently
@@ -51,7 +51,9 @@ failures: a call that spent its whole budget on reasoning and returned no answer
 the same, and `spent_tokens()` reads it from justai's counters after the exception. The "Score vs
 Kosten" chart multiplies these by the prices in `models.jsonl` to plot what one full benchmark
 run costs, following the vision toggle. Models with a prompt that lacks a token count are left
-out of that chart rather than priced on partial data.
+out of that chart rather than priced on partial data. A per-request fee (`request_price`, dollars
+per 1000 requests, e.g. Perplexity) is added to each run. Prices are list prices after any intro
+discount ends, set through `SPEC_OVERRIDES` in `modelspecs.py`, so no model is judged on a promo.
 
 ### Data Flow
 

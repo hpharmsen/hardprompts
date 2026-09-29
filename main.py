@@ -2,7 +2,11 @@ import sys
 import tomllib
 import webbrowser
 import yaml
+from dotenv import load_dotenv
 from pathlib import Path
+
+# justai searches for .env from its own install dir, which finds a different .env than ours
+load_dotenv(Path(__file__).parent / '.env')
 
 from run import run_jobs, get_jobs
 from output import print_results, print_report, generate_standalone_html, YELLOW, RESET
