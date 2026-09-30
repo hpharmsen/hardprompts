@@ -11,13 +11,14 @@ models:
   # gpt-5.4-nano   vervangen door gpt-5.6-luna, zelfde prijs en 48/48 tegen 24/48
   # gpt-5.6-luna   vervangen door gpt-6-luna, half zo duur: $0.1/$0.5 tegen $0.2/$1.2
   # gpt-5.6-sol    vervangen door gpt-6-sol, zelfde prijs $2/$10
+  # gpt-6-sol      vervangen door gpt-6.1-sol, zelfde prijs $2/$10
   - gpt-5.6-terra
   - gpt-5.6-terra@high
   - gpt-5.6-terra@low
   - gpt-5.6-terra@max        # OpenAI's SDK caps at xhigh, so justai maps max down and warns
   - gpt-6-astra          # $10/$50 per M tokens, dus duur. gpt-6-astra-pro kost hetzelfde maar staat er niet bij
   - gpt-6-luna           # $0.1/$0.5. OpenAI noemt dit een permanente prijs, geen introkorting
-  - gpt-6-sol            # $2/$10. gpt-6-sol-pro kost hetzelfde maar staat er niet bij, net als bij astra
+  - gpt-6.1-sol          # $2/$10. gpt-6.1-sol-pro staat er niet bij, net als bij astra
   # o3-mini
 
   # claude-fable-5    vervangen door claude-fable-5-1, zelfde prijs. Varianten idem verhuisd
@@ -36,7 +37,8 @@ models:
   # claude-opus-5@high   idem
   # claude-opus-5@low    varianten verhuisd naar opus-5-5, net als eerder van 4-8 naar 5
   # claude-opus-5@max    idem
-  - claude-sonnet-5
+  # claude-sonnet-5   vervangen door claude-sonnet-5-5, zelfde prijs $2/$10
+  - claude-sonnet-5-5   # default effort high, anders dan opus-5-5 (medium)
 
   - gemini-2.5-flash-lite
   - gemini-3.1-flash-lite
