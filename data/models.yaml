@@ -26,7 +26,8 @@ models:
   # claude-fable-5-1@high  # Verwijderd. Te duur.
   # claude-fable-5-1@low  # Verwijderd. Te duur.
   # claude-fable-5-1@max  # Verwijderd. Te duur.
-  - claude-haiku-4-5
+  # claude-haiku-4-5  vervangen door claude-haiku-5-5, tien keer goedkoper: $0.1/$0.5 tegen $1/$5
+  - claude-haiku-5-5   # $0.1/$0.5 voor prompts tot 100K tokens, daarboven $0.5/$2.5
   # claude-opus-4-7   vervangen door claude-opus-5, zelfde prijs
   # claude-opus-4-8   idem, zelfde prijs. Effort-varianten verhuisd naar opus-5
   # claude-opus-5     vervangen door claude-opus-5-5, goedkoper: $4/$20 tegen $5/$25. Varianten verhuisd

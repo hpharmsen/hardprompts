@@ -47,6 +47,10 @@ SPEC_OVERRIDES = {
     # Perplexity also charges per request: $6 per 1000 at the default search context 'low',
     # which is what justai sends (usage.cost.request_cost = 0.006).
     'sonar-pro': {'request_price': 6.0},
+    # OpenRouter routes Kimi through third-party hosts that undercut Moonshot. We call
+    # api.moonshot.ai, which lists K2.6 at $0.95/$4 and K3 at $3/$15 (checked 2026-10-10).
+    'kimi-k2.6': {'input_price': 0.95, 'output_price': 4.0},
+    'kimi-k3': {'input_price': 3.0, 'output_price': 15.0},
 }
 
 # api.deepseek.com calls V4.1 Flash deepseek-flash, OpenRouter calls it deepseek-v4.1-flash,
